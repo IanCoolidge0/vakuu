@@ -12,7 +12,7 @@ A benchmarking tool that lets LLM-driven agents play real runs of Slay the Spire
 │  - Claude   │  GET  /game/state      │  - Hooks into    │
 │  - GPT-4    │  GET  /game/combat     │    game engine   │
 │  - Gemini   │  POST /game/action     │  - Reads state   │
-│  - etc.     │  ...                   │  - Executes acts  │
+│  - etc.     │  ...                   │  - Executes acts │
 └─────────────┘                        └──────────────────┘
 ```
 
