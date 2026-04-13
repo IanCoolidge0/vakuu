@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# .NET / C#
+bin/
+obj/
+*.dll
+*.pdb
+*.user
+*.suo
+.godot/
+
+# IDE
+.idea/
+.vs/
+*.swp
+*.sln.DotSettings.user
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets
+.env
+*.key
+
+# NuGet
+packages/
+
+# Other
+.claude/
