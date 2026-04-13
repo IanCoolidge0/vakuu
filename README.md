@@ -1,5 +1,10 @@
 # vakuu
 
+<p align="center"> 
+<img width="550" height="310" alt="image" src="https://github.com/user-attachments/assets/48f36f16-e5db-4f3a-b5e1-573a103a8b29" />
+</p>
+
+
 A benchmarking tool that lets LLM-driven agents play real runs of Slay the Spire 2. The project has two components: a C# mod that exposes game state and actions via a local HTTP API, and a Python agent harness that connects LLMs to that API.
 
 ## Architecture
