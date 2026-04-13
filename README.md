@@ -1,4 +1,4 @@
-# STS2Bench
+# vakuu
 
 A benchmarking tool that lets LLM-driven agents play real runs of Slay the Spire 2. The project has two components: a C# mod that exposes game state and actions via a local HTTP API, and a Python agent harness that connects LLMs to that API.
 
@@ -54,9 +54,9 @@ The `/game/state` endpoint detects the current screen and includes screen-specif
 | `card_select` | Card grid for upgrade/transform/remove |
 | `treasure` | Relic obtained |
 
-### `sts2-agent/` — Agent Harness (Python) — "Vakuu"
+### `sts2-agent/` — Agent Harness (Python)
 
-Named after the Act 3 ancient that autoplays your first turn. The harness connects an LLM to the game API using tool_use for structured action execution.
+The harness connects an LLM to the game API using tool_use for structured action execution.
 
 **How it works:**
 1. Polls `/game/state` to determine the current screen
