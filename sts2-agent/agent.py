@@ -220,6 +220,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         try:
             combat = self.client.get_combat()
             hand = combat.get("hand", [])
+            # Strip space before the + for upgraded cards to match the visible card title
+            name_normalized = card_name.replace(" +", "+")
             # Exact match first
             for i, card in enumerate(hand):
                 if card["name"].lower() == card_name.lower():
