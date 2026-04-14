@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Nodes.Events;
 using sts2_headless.sts2_headlessCode.Models;
 using sts2_headless.sts2_headlessCode.Server;
 
@@ -144,6 +145,33 @@ public static class StateHandler
             return "rewards";
         }
 
+        // If CurrentRoom is still an EventRoom and the event still needs
+        // interaction (unfinished or pre-finished), show the event screen —
+        // even if the map is visually open — so the agent uses the event
+        // tools (choose_event_option / proceed) instead of the map.
+        if (state.CurrentRoom is EventRoom unfinishedEventRoom)
+        {
+            var em = unfinishedEventRoom.LocalMutableEvent;
+            if (!em.IsFinished || unfinishedEventRoom.IsPreFinished)
+                return DetectEventScreen(unfinishedEventRoom);
+        }
+
+        // A pending "proceed" event option button anywhere in the scene tree
+        // blocks map navigation. Search the whole tree so we catch both the
+        // EventRoom-path case and any lingering nodes elsewhere. This mirrors
+        // the Proceed handler's effective behavior and prevents the agent from
+        // thrashing the map while a hidden proceed button is still required.
+        var sceneRoot = ((Godot.SceneTree)Godot.Engine.GetMainLoop()).Root;
+        var allProceedButtons = ActionHandler.FindAll<NEventOptionButton>(sceneRoot)
+            .Where(b => b.Option.IsProceed && !b.Option.IsLocked && b.Visible && b.IsVisibleInTree())
+            .ToList();
+        if (allProceedButtons.Count > 0)
+        {
+            bool wasAncient = state.CurrentRoom is EventRoom er
+                && er.LocalMutableEvent is AncientEventModel;
+            return wasAncient ? "ancient" : "event";
+        }
+
         // Check if map is open (overrides room type — map can show over finished events etc.)
         if (NMapScreen.Instance?.IsOpen == true)
             return "map";
@@ -165,20 +193,22 @@ public static class StateHandler
     private static string DetectEventScreen(EventRoom eventRoom)
     {
         var eventModel = eventRoom.LocalMutableEvent;
+        bool isAncient = eventModel is AncientEventModel;
 
-        // Ancient events: once pre-finished, the map is available
-        if (eventModel is AncientEventModel && eventRoom.IsPreFinished)
+        // If the event is fully finished AND the map is open, we're done
+        if (eventModel.IsFinished && NMapScreen.Instance?.IsOpen == true)
             return "map";
 
-        // If event is finished, it's done
-        if (eventModel.IsFinished)
-            return NMapScreen.Instance?.IsOpen == true ? "map" : "waiting";
+        // Options still showing — interact with the event normally
+        if (eventModel.CurrentOptions.Count > 0)
+            return isAncient ? "ancient" : "event";
 
-        // Check if options exist
-        if (eventModel.CurrentOptions.Count == 0)
-            return "waiting";
+        // Pre-finished / finished-but-map-closed — still in the event room
+        // awaiting a proceed click to complete the transition.
+        if (eventRoom.IsPreFinished || eventModel.IsFinished)
+            return isAncient ? "ancient" : "event";
 
-        return eventModel is AncientEventModel ? "ancient" : "event";
+        return "waiting";
     }
 
     private static CardRewardInfo BuildCardRewardInfo(MegaCrit.Sts2.Core.Entities.Players.Player player)

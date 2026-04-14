@@ -32,10 +32,12 @@ RESET = "\033[0m"
 
 
 class Agent:
-    def __init__(self, llm: LLMProvider, client: GameClient, verbose: bool = True):
+    def __init__(self, llm: LLMProvider, client: GameClient, verbose: bool = True,
+                 logger=None):
         self.llm = llm
         self.client = client
         self.verbose = verbose
+        self.logger = logger
         self.last_act = 0
         self.action_count = 0
         self.max_actions = 2000  # safety limit per run
@@ -161,6 +163,10 @@ class Agent:
                 print(f"\n{BOLD}{CYAN}{'─'*60}")
                 print(f"  {screen.upper()} | Floor {floor} | {hp_color}HP {hp}/{max_hp}{CYAN} | Gold {gold} | Action #{self.action_count}")
                 print(f"{'─'*60}{RESET}")
+            if self.logger:
+                self.logger.screen(screen, self.action_count,
+                                   f"{state.get('hp', '?')}/{state.get('max_hp', '?')}",
+                                   state.get('gold', '?'), state.get('floor', '?'))
 
             if not tools:
                 print(f"{YELLOW}No tools for screen '{screen}', trying to proceed...{RESET}")
@@ -341,16 +347,22 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
     def _take_action(self, prompt: str, tools: list[dict], screen: str, state: dict):
         """Send prompt to LLM, handle tool calls in a loop."""
+        if self.logger:
+            self.logger.prompt(prompt)
         try:
             text, tool_calls = self.llm.send(prompt, tools)
         except Exception as e:
             print(f"{RED}LLM error: {e}{RESET}")
             print(f"{YELLOW}Clearing conversation history to recover...{RESET}")
+            if self.logger:
+                self.logger.error(f"LLM error (send): {e}")
             self.llm.clear_history()
             return
 
         if text:
             print(f"{MAGENTA}{text}{RESET}")
+        if self.logger:
+            self.logger.llm_text(text)
 
         # Handle tool call loop
         max_tool_rounds = 5
@@ -371,12 +383,17 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 inp_str = ", ".join(f"{k}={v}" for k, v in inp.items()) if inp else ""
 
                 print(f"  {BOLD}{GREEN}>>> {name}({inp_str}){RESET}")
+                if self.logger:
+                    self.logger.tool_call(name, inp)
 
                 try:
                     result = self._execute_tool(tool_call, screen, state)
                     self.action_count += 1
                 except Exception as e:
                     result = json.dumps({"error": str(e)})
+
+                if self.logger:
+                    self.logger.tool_result(name, result)
 
                 # Check if a play_card triggered a screen change (e.g. hand_select)
                 if name == "play_card" and not screen_changed:
@@ -407,12 +424,16 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 print(f"{RED}LLM error on tool result: {e}{RESET}")
                 # Conversation is now broken — clear history to recover
                 print(f"{YELLOW}Clearing conversation history to recover...{RESET}")
+                if self.logger:
+                    self.logger.error(f"LLM error (send_tool_results): {e}")
                 self.llm.clear_history()
                 self._pending_tool_calls = False
                 break
 
             if text:
                 print(f"{MAGENTA}{text}{RESET}")
+            if self.logger:
+                self.logger.llm_text(text)
 
             # If a card play changed the screen, break so the main loop
             # picks up the new screen with correct tools and prompt.
@@ -503,8 +524,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     result = self.client.shop_buy(inp.get("slot_index", inp.get("card_index", 0)))
                 case "shop_remove_card":
                     result = self.client.shop_remove_card()
-                case "shop_leave":
-                    result = self.client.shop_leave()
 
                 # In-combat hand card selection (e.g. Armaments, Acrobatics)
                 case "select_hand_card":

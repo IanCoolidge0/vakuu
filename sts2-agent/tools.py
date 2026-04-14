@@ -122,15 +122,6 @@ REWARDS_TOOLS = [
             "required": ["reward_type"]
         }
     },
-    {
-        "name": "proceed",
-        "description": "Leave the rewards screen and proceed to the map.",
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    },
 ]
 
 REST_TOOLS = [
@@ -174,19 +165,19 @@ SHOP_TOOLS = [
             "required": []
         }
     },
+]
+
+# Utility tools available on all screens
+UTILITY_TOOLS = [
     {
-        "name": "shop_leave",
-        "description": "Leave the shop without buying anything else.",
+        "name": "proceed",
+        "description": "Leave the current room/screen by clicking its proceed button. Use this when you're done with the current screen — this includes leaving a shop with items you don't want, skipping remaining rewards, exiting a rest site after resting, or continuing after an event. Also works as an escape hatch if the screen is stuck (e.g. map clicks not registering after an event). Don't call this in the middle of combat or when you still want to take an action on the current screen.",
         "input_schema": {
             "type": "object",
             "properties": {},
             "required": []
         }
     },
-]
-
-# Utility tool available on all screens
-UTILITY_TOOLS = [
     {
         "name": "view_deck",
         "description": "View your full deck (sorted alphabetically). Useful before making upgrade, remove, or card reward decisions.",

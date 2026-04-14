@@ -35,3 +35,4 @@ packages/
 
 # Other
 .claude/
+logs/

@@ -90,9 +90,6 @@ class GameClient:
     def shop_remove_card(self) -> dict:
         return self._post("/game/action", {"type": "shop_remove_card"})
 
-    def shop_leave(self) -> dict:
-        return self._post("/game/action", {"type": "shop_leave"})
-
     # --- Polling helpers ---
 
     def wait_for_screen(self, *expected_screens: str, max_retries: int = 10,

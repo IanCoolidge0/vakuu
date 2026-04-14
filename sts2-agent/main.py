@@ -12,6 +12,7 @@ from client import GameClient
 from agent import Agent
 from llm.claude import ClaudeProvider
 from llm.openai import OpenAIProvider
+from run_logging import SessionLogger
 
 
 def main():
@@ -26,6 +27,8 @@ def main():
                         help="Anthropic API key (or set ANTHROPIC_API_KEY env var)")
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose LLM reasoning and agent output")
+    parser.add_argument("--log-dir", default="logs",
+                        help="Directory for session debug logs (default: logs)")
     args = parser.parse_args()
 
     # Load system prompt
@@ -46,8 +49,11 @@ def main():
     # Create game client
     client = GameClient(base_url=args.url)
 
+    # Create session logger
+    logger = SessionLogger(log_dir=args.log_dir, model=args.model, provider=args.provider)
+
     # Create and run agent
-    agent = Agent(llm=llm, client=client, verbose=args.verbose)
+    agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger)
 
     BLUE = "\033[34m"
     CYAN = "\033[36m"
@@ -73,6 +79,7 @@ def main():
     print(f"  {BOLD}{CYAN}V A K U U{RESET}{DIM}  -  STS2 Benchmark Agent{RESET}")
     print(f"  {DIM}Model:  {RESET}{args.model}")
     print(f"  {DIM}Server: {RESET}{args.url}")
+    print(f"  {DIM}Log:    {RESET}{logger.path}")
     print()
 
     try:
@@ -81,7 +88,10 @@ def main():
         print("\nAgent stopped by user.")
     except Exception as e:
         print(f"\nAgent crashed: {e}")
+        logger.error(f"Agent crashed: {e}")
         raise
+    finally:
+        logger.close()
 
 
 if __name__ == "__main__":

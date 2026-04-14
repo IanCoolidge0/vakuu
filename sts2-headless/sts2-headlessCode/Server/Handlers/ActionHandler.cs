@@ -56,7 +56,6 @@ public static class ActionHandler
             "skip_card_reward" => SkipCardReward(),
             "shop_buy" => ShopBuy(request, run),
             "shop_remove_card" => ShopRemoveCard(request, run),
-            "shop_leave" => ShopLeave(run),
             "select_card" => SelectCard(request),
             "confirm_selection" => await ConfirmSelection(),
             _ => Error($"Unknown action type: {request.Type}")
@@ -279,18 +278,6 @@ public static class ActionHandler
 
         _ = removal.OnTryPurchaseWrapper(merchantRoom.Inventory);
         return Success($"Opening card removal (cost: {removal.Cost})");
-    }
-
-    private static string ShopLeave(NRun run)
-    {
-        var root = ((SceneTree)Engine.GetMainLoop()).Root;
-        var merchantRoom = root.GetNodeOrNull<NMerchantRoom>(
-            "/root/Game/RootSceneContainer/Run/RoomContainer/MerchantRoom");
-        if (merchantRoom is null)
-            return Error("Not in a shop.");
-
-        merchantRoom.ProceedButton?.ForceClick();
-        return Success("Left shop.");
     }
 
     private static string SelectCard(CombatActionRequest request)
