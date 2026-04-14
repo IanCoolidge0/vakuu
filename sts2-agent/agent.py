@@ -338,7 +338,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             text, tool_calls = self.llm.send(prompt, tools)
         except Exception as e:
             print(f"{RED}LLM error: {e}{RESET}")
-            time.sleep(2)
+            print(f"{YELLOW}Clearing conversation history to recover...{RESET}")
+            self.llm.clear_history()
             return
 
         if text:
@@ -411,6 +412,13 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             if screen_changed:
                 self._pending_tool_calls = False
                 break
+
+        # If the loop exited with pending tool_use blocks (max rounds,
+        # screen change, etc.), clear history to prevent a death spiral
+        # of "tool_use ids without tool_result" API errors.
+        if tool_calls:
+            self.llm.clear_history()
+            self._pending_tool_calls = False
 
     def _execute_tool(self, tool_call: dict, screen: str, state: dict) -> str:
         """Execute a tool call and return the result as a string."""
