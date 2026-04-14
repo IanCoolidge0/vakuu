@@ -226,15 +226,20 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         try:
             combat = self.client.get_combat()
             hand = combat.get("hand", [])
-            # Strip space before the + for upgraded cards to match the visible card title
-            name_normalized = card_name.replace(" +", "+")
-            # Exact match first
+            # Strip trailing "+" that the formatter adds for upgraded cards
+            base_name = card_name.rstrip("+").rstrip()
+            # Exact match first (with upgrade suffix)
             for i, card in enumerate(hand):
-                if card["name"].lower() == card_name.lower():
+                display = card["name"] + ("+" if card["upgraded"] else "")
+                if display.lower() == card_name.lower().replace(" +", "+"):
+                    return i
+            # Match by base name
+            for i, card in enumerate(hand):
+                if card["name"].lower() == base_name.lower():
                     return i
             # Partial match fallback
             for i, card in enumerate(hand):
-                if card_name.lower() in card["name"].lower():
+                if base_name.lower() in card["name"].lower():
                     return i
         except Exception:
             pass

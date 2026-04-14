@@ -21,13 +21,15 @@ def main():
                         help="Game API URL")
     parser.add_argument("--api-key", default=None,
                         help="Anthropic API key (or set ANTHROPIC_API_KEY env var)")
-    parser.add_argument("--quiet", action="store_true",
-                        help="Suppress verbose output")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Enable verbose LLM reasoning and agent output")
     args = parser.parse_args()
 
     # Load system prompt
     prompt_path = Path(__file__).parent / "prompts" / "system.txt"
     system_prompt = prompt_path.read_text()
+    if not args.verbose:
+        system_prompt += "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
 
     # Create LLM provider
     llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
@@ -36,7 +38,7 @@ def main():
     client = GameClient(base_url=args.url)
 
     # Create and run agent
-    agent = Agent(llm=llm, client=client, verbose=not args.quiet)
+    agent = Agent(llm=llm, client=client, verbose=args.verbose)
 
     print(f"\033[1m\033[36m")
     print(f"  ╔═══════════════════════════════════════╗")
