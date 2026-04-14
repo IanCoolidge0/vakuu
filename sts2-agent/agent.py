@@ -100,6 +100,8 @@ class Agent:
                 ("card_select", "rewards"),
                 ("card_reward", "card_select"),
                 ("card_select", "card_reward"),
+                ("combat", "hand_select"),
+                ("hand_select", "combat"),
                 ("rest", "card_select"),
                 ("card_select", "rest"),
                 ("shop", "card_select"),
@@ -414,10 +416,18 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 break
 
         # If the loop exited with pending tool_use blocks (max rounds,
-        # screen change, etc.), clear history to prevent a death spiral
-        # of "tool_use ids without tool_result" API errors.
+        # screen change, etc.), send cancellation results to close them
+        # properly instead of nuking the entire conversation history.
         if tool_calls:
-            self.llm.clear_history()
+            dummy_results = [
+                {"tool_use_id": tc['id'],
+                 "content": json.dumps({"error": "Action cancelled — screen changed."})}
+                for tc in tool_calls
+            ]
+            try:
+                self.llm.send_tool_results(dummy_results, tools)
+            except Exception:
+                self.llm.clear_history()
             self._pending_tool_calls = False
 
     def _execute_tool(self, tool_call: dict, screen: str, state: dict) -> str:
