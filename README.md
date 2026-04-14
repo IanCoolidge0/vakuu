@@ -1,4 +1,9 @@
-# STS2Bench
+# vakuu
+
+<p align="center"> 
+<img width="550" height="310" alt="image" src="https://github.com/user-attachments/assets/48f36f16-e5db-4f3a-b5e1-573a103a8b29" />
+</p>
+
 
 A benchmarking tool that lets LLM-driven agents play real runs of Slay the Spire 2. The project has two components: a C# mod that exposes game state and actions via a local HTTP API, and a Python agent harness that connects LLMs to that API.
 
@@ -12,7 +17,7 @@ A benchmarking tool that lets LLM-driven agents play real runs of Slay the Spire
 │  - Claude   │  GET  /game/state      │  - Hooks into    │
 │  - GPT-4    │  GET  /game/combat     │    game engine   │
 │  - Gemini   │  POST /game/action     │  - Reads state   │
-│  - etc.     │  ...                   │  - Executes acts  │
+│  - etc.     │  ...                   │  - Executes acts │
 └─────────────┘                        └──────────────────┘
 ```
 
@@ -54,9 +59,9 @@ The `/game/state` endpoint detects the current screen and includes screen-specif
 | `card_select` | Card grid for upgrade/transform/remove |
 | `treasure` | Relic obtained |
 
-### `sts2-agent/` — Agent Harness (Python) — "Vakuu"
+### `sts2-agent/` — Agent Harness (Python)
 
-Named after the Act 3 ancient that autoplays your first turn. The harness connects an LLM to the game API using tool_use for structured action execution.
+The harness connects an LLM to the game API using tool_use for structured action execution.
 
 **How it works:**
 1. Polls `/game/state` to determine the current screen
@@ -109,6 +114,11 @@ Named after the Act 3 ancient that autoplays your first turn. The harness connec
 3. Run the agent — it takes over from the current screen
 4. Watch the agent play in real time
 
+## Notes
+
+- Despite frequent cache resets, vakuu is token-heavy and expensive to run. As a rough estimate, a full run through Act 3 may cost ~$20 in tokens at Claude Sonnet pricing (as of 4/2026).
+- However, this is unlikely to happen in practice as all current models rarely make it to the Act 1 boss. 
+
 ## Status
 
 **Working:**
@@ -120,9 +130,13 @@ Named after the Act 3 ancient that autoplays your first turn. The harness connec
 
 **Known Issues / TODO:**
 - Character-specific mechanics (Regent stars, Necrobinder Osty, Defect orbs)
+- Various state transitions, nonstandard selection screens, and "Proceed" buttons require manual input
 - Some dynamic relic descriptions don't fully resolve
 - Screen transitions can occasionally need a re-poll
 - OpenAI / Gemini provider adapters not yet implemented
 - Run logging and metrics collection
 - Multi-run batch benchmarking
 - Seed control for reproducible comparisons
+- Persistent inter-run memory
+
+
