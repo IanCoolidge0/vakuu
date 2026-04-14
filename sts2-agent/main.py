@@ -11,12 +11,15 @@ os.environ["PYTHONUNBUFFERED"] = "1"
 from client import GameClient
 from agent import Agent
 from llm.claude import ClaudeProvider
+from llm.openai import OpenAIProvider
 
 
 def main():
     parser = argparse.ArgumentParser(description="STS2 Benchmark Agent")
     parser.add_argument("--model", default="claude-sonnet-4-20250514",
                         help="Model to use (default: claude-sonnet-4-20250514)")
+    parser.add_argument("--provider", default="claude", choices=["claude", "openai"],
+                        help="LLM provider (default: claude)")
     parser.add_argument("--url", default="http://localhost:58232",
                         help="Game API URL")
     parser.add_argument("--api-key", default=None,
@@ -29,10 +32,16 @@ def main():
     prompt_path = Path(__file__).parent / "prompts" / "system.txt"
     system_prompt = prompt_path.read_text()
     if not args.verbose:
-        system_prompt += "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
+        if args.provider == "openai":
+            system_prompt += "\n\n## Output\nKeep reasoning brief — 1-2 short sentences max, then call the tool."
+        else:
+            system_prompt += "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
 
     # Create LLM provider
-    llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
+    if args.provider == "openai":
+        llm = OpenAIProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
+    else:
+        llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
 
     # Create game client
     client = GameClient(base_url=args.url)
