@@ -40,13 +40,30 @@ def main():
     # Create and run agent
     agent = Agent(llm=llm, client=client, verbose=args.verbose)
 
-    print(f"\033[1m\033[36m")
-    print(f"  ╔═══════════════════════════════════════╗")
-    print(f"  ║             V A K U U                 ║")
-    print(f"  ║       STS2 Benchmark Agent            ║")
-    print(f"  ╚═══════════════════════════════════════╝\033[0m")
-    print(f"  Model:  {args.model}")
-    print(f"  Server: {args.url}")
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    YELLOW = "\033[33m"
+    RED = "\033[31m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    RESET = "\033[0m"
+
+    print(f"{BLUE}")
+    print(f"                  ,--.")
+    print(f"         {RED}/\\{BLUE}      / {YELLOW}o o{BLUE} \\      {RED}/\\{BLUE}")
+    print(f"        {RED}/ _\\{BLUE}    |  {RED}\\>{BLUE}   |    {RED}/_ \\{BLUE}")
+    print(f"       {RED}|/ {BLUE} \\____|  ___  |____/ {RED}  \\|{BLUE}")
+    print(f"             /  \\{DIM}######{RESET}{BLUE}/  \\")
+    print(f"            /    \\{DIM}####{RESET}{BLUE}/    \\")
+    print(f"           (  {CYAN}~~{BLUE}  |{DIM}##{RESET}{BLUE}|  {CYAN}~~{BLUE}  )")
+    print(f"            \\    / .. \\    /")
+    print(f"          {YELLOW}  $$ {BLUE}/  /  \\  \\{YELLOW} $$")
+    print(f"          $${BLUE}  /  /    \\  \\ {YELLOW} $$")
+    print(f"         ${BLUE}   \\_/      \\_/{YELLOW}   ${RESET}")
+    print()
+    print(f"  {BOLD}{CYAN}V A K U U{RESET}{DIM}  -  STS2 Benchmark Agent{RESET}")
+    print(f"  {DIM}Model:  {RESET}{args.model}")
+    print(f"  {DIM}Server: {RESET}{args.url}")
     print()
 
     try:
