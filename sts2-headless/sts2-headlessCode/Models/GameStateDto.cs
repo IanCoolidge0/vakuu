@@ -43,11 +43,24 @@ public record GameStateResponse
     [JsonPropertyName("card_select")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CardSelectInfo? CardSelect { get; init; }
+
+    [JsonPropertyName("hand_select")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public HandSelectInfo? HandSelect { get; init; }
 }
 
 public record CardSelectInfo
 {
     [JsonPropertyName("screen_type")] public string ScreenType { get; init; } = "";
+    [JsonPropertyName("cards")] public List<CardInfo> Cards { get; init; } = [];
+}
+
+public record HandSelectInfo
+{
+    [JsonPropertyName("trigger_card")] public string TriggerCard { get; init; } = "";
+    [JsonPropertyName("trigger_description")] public string TriggerDescription { get; init; } = "";
+    [JsonPropertyName("min_select")] public int MinSelect { get; init; }
+    [JsonPropertyName("max_select")] public int MaxSelect { get; init; }
     [JsonPropertyName("cards")] public List<CardInfo> Cards { get; init; } = [];
 }
 

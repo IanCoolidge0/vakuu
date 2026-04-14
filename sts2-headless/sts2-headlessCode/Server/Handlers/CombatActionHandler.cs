@@ -59,6 +59,7 @@ public static class CombatActionHandler
             "play_card" => PlayCard(request, player, playerCombat, combatState),
             "end_turn" => EndTurn(player),
             "use_potion" => UsePotion(request, player, combatState),
+            "select_hand_card" => SelectHandCard(request),
             _ => Error($"Unknown combat action type: {request.Type}")
         };
 
@@ -70,29 +71,47 @@ public static class CombatActionHandler
         // Wait until the game is ready for the next input
         await WaitForReady();
 
+        // If no card selection is pending, pop the selector off the stack so it
+        // doesn't intercept manual play or other game-driven selections.
+        if (AgentCardSelector.Pending is null)
+            AgentCardSelector.CleanupScope();
+
         return result;
     }
 
     /// <summary>
     /// Waits until combat is back in play phase (ready for next action) or combat has ended.
-    /// Uses Task.Delay to yield back to the game loop between checks.
+    /// Two-phase wait: first waits for the action to leave play phase (start processing),
+    /// then waits for play phase to return, combat to end, or card selection to trigger.
     /// </summary>
     private static async Task WaitForReady()
     {
-        // Small initial delay to let the action start processing
+        // Phase 1: Wait for the action to start processing (leave play phase).
+        // Give it a reasonable window — if it never leaves, the action resolved instantly.
         await Task.Delay(10);
-
         int waited = 10;
-        while (waited < MaxWaitMs)
+        const int phase1MaxMs = 2000;
+        while (waited < phase1MaxMs)
         {
-            // Combat ended — agent should poll /game/state to see rewards
             if (!CombatManager.Instance.IsInProgress)
                 return;
+            if (!CombatManager.Instance.IsPlayPhase)
+                break;  // Action started processing
+            if (AgentCardSelector.Pending is not null)
+                return;
+            await Task.Delay(PollIntervalMs);
+            waited += PollIntervalMs;
+        }
 
-            // Back in play phase — ready for next action
+        // Phase 2: Wait for the action to finish resolving.
+        while (waited < MaxWaitMs)
+        {
+            if (!CombatManager.Instance.IsInProgress)
+                return;
             if (CombatManager.Instance.IsPlayPhase)
                 return;
-
+            if (AgentCardSelector.Pending is not null)
+                return;
             await Task.Delay(PollIntervalMs);
             waited += PollIntervalMs;
         }
@@ -135,22 +154,35 @@ public static class CombatActionHandler
             target = enemies[targetIndex];
         }
 
-        IDisposable? selectorScope = null;
-        if (request.SelectIndex is not null)
-        {
-            selectorScope = CardSelectCmd.PushSelector(new AgentCardSelector(request.SelectIndex.Value));
-        }
+        // Always push a blocking card selector so that if the card triggers
+        // a selection (e.g. Armaments upgrade, Acrobatics discard), the game
+        // blocks until the agent responds via select_hand_card.
+        var cardInfo = CombatHandler.BuildCardInfo(card);
+        var selector = new AgentCardSelector(cardInfo.Name, cardInfo.Description);
+        var selectorScope = CardSelectCmd.PushSelector(selector);
+        AgentCardSelector.SetSelectorScope(selectorScope);
 
         var action = new PlayCardAction(card, target);
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
 
-        // Clean up selector after a delay to let the action resolve
-        if (selectorScope is not null)
-        {
-            Task.Delay(5000).ContinueWith(_ => selectorScope.Dispose());
-        }
-
         return Success($"Played {card.Id}");
+    }
+
+    private static string SelectHandCard(CombatActionRequest request)
+    {
+        var pending = AgentCardSelector.Pending;
+        if (pending is null)
+            return Error("No card selection pending.");
+
+        if (request.CardIndex is null)
+            return Error("select_hand_card requires card_index.");
+
+        int cardIndex = request.CardIndex.Value;
+        if (cardIndex < 0 || cardIndex >= pending.Options.Count)
+            return Error($"card_index {cardIndex} out of range ({pending.Options.Count} options).");
+
+        AgentCardSelector.Respond(new[] { cardIndex });
+        return Success($"Selected {pending.Options[cardIndex].TitleLocString?.GetFormattedText() ?? "card"}");
     }
 
     private static string EndTurn(Player player)

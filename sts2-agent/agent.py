@@ -17,7 +17,7 @@ from tools import get_tools_for_screen
 from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
-    format_card_select,
+    format_card_select, format_hand_select,
 )
 
 # ANSI color codes
@@ -100,6 +100,10 @@ class Agent:
                 ("card_select", "rewards"),
                 ("card_reward", "card_select"),
                 ("card_select", "card_reward"),
+                ("rest", "card_select"),
+                ("card_select", "rest"),
+                ("shop", "card_select"),
+                ("card_select", "shop"),
             }
             is_related = (self._last_screen, screen) in related_screens
             if screen != self._last_screen and not is_related and not self._pending_tool_calls:
@@ -234,6 +238,23 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             pass
         return None
 
+    def _resolve_hand_select_index(self, card_name: str) -> int | None:
+        """Resolve a card name to its index in the pending hand selection options."""
+        try:
+            state = self.client.get_state()
+            cards = state.get("hand_select", {}).get("cards", [])
+            # Exact match first
+            for i, card in enumerate(cards):
+                if card["name"].lower() == card_name.lower():
+                    return i
+            # Partial match fallback
+            for i, card in enumerate(cards):
+                if card_name.lower() in card["name"].lower():
+                    return i
+        except Exception:
+            pass
+        return None
+
     def _build_summary(self, state: dict) -> str:
         """Build a strategic context summary for the start of a new screen."""
         lines = [
@@ -286,6 +307,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     return format_combat(state, combat)
                 except Exception:
                     return format_state(state) + "\n(Failed to get combat details)"
+            case "hand_select":
+                return format_hand_select(state)
             case "event" | "ancient":
                 return format_event(state)
             case "card_reward":
@@ -333,6 +356,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
             # Execute all tool calls and collect results
             results = []
+            screen_changed = False
             for tool_call in tool_calls:
                 name = tool_call['name']
                 inp = tool_call['input']
@@ -346,6 +370,17 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 except Exception as e:
                     result = json.dumps({"error": str(e)})
 
+                # Check if a play_card triggered a screen change (e.g. hand_select)
+                if name == "play_card" and not screen_changed:
+                    try:
+                        result_data = json.loads(result)
+                        if isinstance(result_data, dict) and result_data.get("success"):
+                            check = self.client.get_state()
+                            if check.get("screen") != screen:
+                                screen_changed = True
+                    except Exception:
+                        pass
+
                 # Check for errors to show
                 try:
                     result_data = json.loads(result)
@@ -356,7 +391,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
                 results.append({"tool_use_id": tool_call['id'], "content": result})
 
-            # Always send all results back — never leave dangling tool_use blocks
+            # Always send all results back - never leave dangling tool_use blocks
             try:
                 text, tool_calls = self.llm.send_tool_results(results, tools)
                 self._pending_tool_calls = bool(tool_calls)
@@ -370,6 +405,12 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
             if text:
                 print(f"{MAGENTA}{text}{RESET}")
+
+            # If a card play changed the screen, break so the main loop
+            # picks up the new screen with correct tools and prompt.
+            if screen_changed:
+                self._pending_tool_calls = False
+                break
 
     def _execute_tool(self, tool_call: dict, screen: str, state: dict) -> str:
         """Execute a tool call and return the result as a string."""
@@ -392,7 +433,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     result = self.client.play_card(
                         card_index,
                         inp.get("target_index"),
-                        inp.get("select_index"),
                     )
                 case "end_turn":
                     result = self.client.end_turn()
@@ -433,18 +473,25 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
                 # Rest site
                 case "choose_rest_option":
-                    result = self.client.choose_rest_option(
-                        inp["option_index"],
-                        inp.get("select_index"),
-                    )
+                    result = self.client.choose_rest_option(inp["option_index"])
 
                 # Shop
                 case "shop_buy":
                     result = self.client.shop_buy(inp.get("slot_index", inp.get("card_index", 0)))
                 case "shop_remove_card":
-                    result = self.client.shop_remove_card(inp["card_index"])
+                    result = self.client.shop_remove_card()
                 case "shop_leave":
                     result = self.client.shop_leave()
+
+                # In-combat hand card selection (e.g. Armaments, Acrobatics)
+                case "select_hand_card":
+                    card_name = inp.get("card_name")
+                    if not card_name:
+                        return json.dumps({"error": "select_hand_card requires card_name."})
+                    card_index = self._resolve_hand_select_index(card_name)
+                    if card_index is None:
+                        return json.dumps({"error": f"Card '{card_name}' not in selection options."})
+                    result = self.client.select_hand_card(card_index)
 
                 # Card selection (upgrade, transform, remove)
                 case "select_card":

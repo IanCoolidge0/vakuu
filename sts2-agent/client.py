@@ -42,14 +42,15 @@ class GameClient:
 
     # --- Combat actions (sync — waits for resolution) ---
 
-    def play_card(self, card_index: int, target_index: int | None = None,
-                  select_index: int | None = None) -> dict:
+    def play_card(self, card_index: int, target_index: int | None = None) -> dict:
         data = {"type": "play_card", "card_index": card_index}
         if target_index is not None:
             data["target_index"] = target_index
-        if select_index is not None:
-            data["select_index"] = select_index
         return self._post("/game/action/combat", data)
+
+    def select_hand_card(self, card_index: int) -> dict:
+        return self._post("/game/action/combat",
+                          {"type": "select_hand_card", "card_index": card_index})
 
     def end_turn(self) -> dict:
         return self._post("/game/action/combat", {"type": "end_turn"})
@@ -80,17 +81,14 @@ class GameClient:
     def skip_card_reward(self) -> dict:
         return self._post("/game/action", {"type": "skip_card_reward"})
 
-    def choose_rest_option(self, index: int, select_index: int | None = None) -> dict:
-        data = {"type": "choose_rest_option", "card_index": index}
-        if select_index is not None:
-            data["select_index"] = select_index
-        return self._post("/game/action", data)
+    def choose_rest_option(self, index: int) -> dict:
+        return self._post("/game/action", {"type": "choose_rest_option", "card_index": index})
 
     def shop_buy(self, index: int) -> dict:
         return self._post("/game/action", {"type": "shop_buy", "card_index": index})
 
-    def shop_remove_card(self, select_index: int) -> dict:
-        return self._post("/game/action", {"type": "shop_remove_card", "select_index": select_index})
+    def shop_remove_card(self) -> dict:
+        return self._post("/game/action", {"type": "shop_remove_card"})
 
     def shop_leave(self) -> dict:
         return self._post("/game/action", {"type": "shop_leave"})

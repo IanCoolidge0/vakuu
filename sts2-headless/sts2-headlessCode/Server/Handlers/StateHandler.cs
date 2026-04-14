@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
 using sts2_headless.sts2_headlessCode.Models;
+using sts2_headless.sts2_headlessCode.Server;
 
 namespace sts2_headless.sts2_headlessCode.Server.Handlers;
 
@@ -105,12 +106,26 @@ public static class StateHandler
         {
             response = response with { CardSelect = BuildCardSelectInfo() };
         }
+        else if (screen == "hand_select")
+        {
+            response = response with { HandSelect = BuildHandSelectInfo() };
+        }
 
         return JsonSerializer.Serialize(response, JsonOptions);
     }
 
     private static string DetectScreen(MegaCrit.Sts2.Core.Runs.RunState state, NRun run)
     {
+        // Check for pending in-combat card selection (e.g. Armaments, Acrobatics)
+        if (AgentCardSelector.Pending is not null)
+        {
+            if (MegaCrit.Sts2.Core.Combat.CombatManager.Instance?.IsInProgress == true)
+                return "hand_select";
+            // Stale pending from ended combat — clean up
+            AgentCardSelector.Cancel();
+            AgentCardSelector.CleanupScope();
+        }
+
         // Check overlay stack first — card reward selection is shown as an overlay
         var overlay = NOverlayStack.Instance?.Peek();
         if (overlay is NCardRewardSelectionScreen)
@@ -357,6 +372,25 @@ public static class StateHandler
         }
 
         return null;
+    }
+
+    private static HandSelectInfo? BuildHandSelectInfo()
+    {
+        var pending = AgentCardSelector.Pending;
+        if (pending is null) return null;
+
+        var cards = new List<CardInfo>();
+        foreach (var card in pending.Options)
+            cards.Add(CombatHandler.BuildCardInfo(card));
+
+        return new HandSelectInfo
+        {
+            TriggerCard = pending.TriggerCardName,
+            TriggerDescription = pending.TriggerCardDescription,
+            MinSelect = pending.MinSelect,
+            MaxSelect = pending.MaxSelect,
+            Cards = cards
+        };
     }
 
     private static ShopInfo? BuildShopInfo(MegaCrit.Sts2.Core.Runs.RunState state)

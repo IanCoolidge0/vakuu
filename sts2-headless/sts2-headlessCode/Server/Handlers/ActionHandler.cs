@@ -204,14 +204,6 @@ public static class ActionHandler
         if (optionIndex < 0 || optionIndex >= buttons.Count)
             return Error($"Option index {optionIndex} out of range ({buttons.Count} options).");
 
-        // For Smith, push a card selector if select_index is provided
-        IDisposable? selectorScope = null;
-        if (request.SelectIndex is not null)
-        {
-            selectorScope = CardSelectCmd.PushSelector(new AgentCardSelector(request.SelectIndex.Value));
-            Task.Delay(10000).ContinueWith(_ => selectorScope.Dispose());
-        }
-
         buttons[optionIndex].ForceClick();
         return Success($"Selected rest option {optionIndex}");
     }
@@ -268,23 +260,12 @@ public static class ActionHandler
         if (!entry.EnoughGold)
             return Error($"Not enough gold (need {entry.Cost}).");
 
-        // For card removal, push a card selector if provided
-        IDisposable? selectorScope = null;
-        if (entry is MerchantCardRemovalEntry && request.SelectIndex is not null)
-        {
-            selectorScope = CardSelectCmd.PushSelector(new AgentCardSelector(request.SelectIndex.Value));
-            Task.Delay(10000).ContinueWith(_ => selectorScope.Dispose());
-        }
-
         _ = entry.OnTryPurchaseWrapper(inventory);
         return Success($"Purchased item at index {slotIndex} (cost: {entry.Cost})");
     }
 
     private static string ShopRemoveCard(CombatActionRequest request, NRun run)
     {
-        if (request.SelectIndex is null)
-            return Error("shop_remove_card requires select_index (card to remove).");
-
         var state = run._state;
         if (state.CurrentRoom is not MerchantRoom merchantRoom)
             return Error("Not in a shop.");
@@ -296,11 +277,8 @@ public static class ActionHandler
         if (!removal.EnoughGold)
             return Error($"Not enough gold for card removal (need {removal.Cost}).");
 
-        var selectorScope = CardSelectCmd.PushSelector(new AgentCardSelector(request.SelectIndex.Value));
-        Task.Delay(10000).ContinueWith(_ => selectorScope.Dispose());
-
         _ = removal.OnTryPurchaseWrapper(merchantRoom.Inventory);
-        return Success($"Removing card at index {request.SelectIndex.Value} (cost: {removal.Cost})");
+        return Success($"Opening card removal (cost: {removal.Cost})");
     }
 
     private static string ShopLeave(NRun run)

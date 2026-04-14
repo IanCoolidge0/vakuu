@@ -35,6 +35,7 @@ class ClaudeProvider(LLMProvider):
             max_tokens=1024,
             system=self.system_prompt,
             tools=tools,
+            tool_choice={"type": "auto", "disable_parallel_tool_use": True},
             messages=self.messages,
         )
 

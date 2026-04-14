@@ -15,10 +15,6 @@ COMBAT_TOOLS = [
                     "type": "integer",
                     "description": "Index of the enemy to target (0-based). Required for single-target attack cards."
                 },
-                "select_index": {
-                    "type": "integer",
-                    "description": "Index of the card to select when a card triggers a choice (e.g. which card to upgrade). Only needed for cards that prompt a selection."
-                }
             },
             "required": ["card_name"]
         }
@@ -140,17 +136,13 @@ REWARDS_TOOLS = [
 REST_TOOLS = [
     {
         "name": "choose_rest_option",
-        "description": "Choose a rest site option (Rest to heal, Smith to upgrade a card, etc).",
+        "description": "Choose a rest site option (Rest to heal, Smith to upgrade a card, etc). If you choose Smith, a card selection screen will open to pick which card to upgrade.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "option_index": {
                     "type": "integer",
                     "description": "Index of the rest option (0-based)"
-                },
-                "select_index": {
-                    "type": "integer",
-                    "description": "If choosing Smith, the index of the card in your deck to upgrade (0-based, sorted alphabetically). Use /game/deck to see the deck."
                 }
             },
             "required": ["option_index"]
@@ -175,16 +167,11 @@ SHOP_TOOLS = [
     },
     {
         "name": "shop_remove_card",
-        "description": "Pay to remove a card from your deck at the shop.",
+        "description": "Pay to remove a card from your deck at the shop. Opens a card selection screen where you pick which card to remove.",
         "input_schema": {
             "type": "object",
-            "properties": {
-                "card_index": {
-                    "type": "integer",
-                    "description": "Index of the card in your deck to remove (0-based, sorted alphabetically). Use /game/deck to see the deck."
-                }
-            },
-            "required": ["card_index"]
+            "properties": {},
+            "required": []
         }
     },
     {
@@ -229,6 +216,23 @@ UTILITY_TOOLS = [
     },
 ]
 
+
+HAND_SELECT_TOOLS = [
+    {
+        "name": "select_hand_card",
+        "description": "Select a card for the pending card selection prompt. The trigger card's description tells you what will happen to the selected card (e.g. upgrade, discard, exhaust).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "card_name": {
+                    "type": "string",
+                    "description": "Name of the card to select from the available options"
+                }
+            },
+            "required": ["card_name"]
+        }
+    },
+]
 
 CARD_SELECT_TOOLS = [
     {
@@ -278,6 +282,8 @@ def get_tools_for_screen(screen: str) -> list[dict]:
             tools.extend(SHOP_TOOLS)
         case "treasure":
             tools.extend(REWARDS_TOOLS)
+        case "hand_select":
+            tools.extend(HAND_SELECT_TOOLS)
         case "card_select":
             tools.extend(CARD_SELECT_TOOLS)
 

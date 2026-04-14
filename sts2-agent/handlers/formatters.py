@@ -180,6 +180,29 @@ def format_card_select(state: dict) -> str:
     return "\n".join(lines)
 
 
+def format_hand_select(state: dict) -> str:
+    hs = state['hand_select']
+    trigger = hs['trigger_card']
+    desc = hs['trigger_description']
+    min_sel = hs['min_select']
+    max_sel = hs['max_select']
+
+    if min_sel == max_sel:
+        count_str = str(min_sel)
+    else:
+        count_str = f"{min_sel}-{max_sel}"
+
+    lines = [
+        f"=== CARD SELECTION ===",
+        f"{trigger}: {desc}",
+        f"Select {count_str} card(s):",
+    ]
+    for i, c in enumerate(hs['cards']):
+        upgraded = "+" if c['upgraded'] else ""
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {c['cost']}) [{c['type']}] - {c['description']}")
+    return "\n".join(lines)
+
+
 def format_treasure(state: dict) -> str:
     lines = [format_state(state)]
     t = state.get('treasure', {})
