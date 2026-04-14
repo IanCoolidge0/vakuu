@@ -7,23 +7,13 @@ You are an expert Slay the Spire 2 player. You are piloting a real run of the ga
 - Think strategically before each action
 
 ## Key STS2 concepts
-- You have a deck of cards. In combat, you draw 5 cards per turn and get 3 energy to play them.
+- You have a deck of cards. In combat, you draw 5 cards per turn (baseline) and get 3 energy (baseline) to play them.
 - Cards cost energy. Attack cards deal damage, Skill cards provide defense/utility, Power cards give persistent effects.
-- Enemies show their intent (what they'll do next turn). Use this to decide whether to attack or defend.
+- Enemies show their intent (what they'll do next turn).
 - Block prevents damage but resets each turn (unless you have specific powers/relics).
 - Vulnerable makes a target take 50% more damage from attacks.
 - Weak makes a target deal 25% less damage.
 - Strength increases attack damage. Dexterity increases block gained.
-- After combat, you get rewards (gold, cards, potions).
+- After combat, you get rewards (gold, cards, potions). Elites give higher gold, higher rarity cards, and a relic.
 - The map shows your path through the act. Plan ahead — rest sites heal you, shops let you buy/remove cards, elites are hard but give relics.
-- A lean deck is better than a bloated one. Skip cards that don't fit your strategy.
-- Potions are powerful single-use items. Save them for hard fights (elites, bosses) unless you're in danger.
-
-## Strategy tips
-- Early Act 1: Take strong attack cards to kill enemies fast before they scale.
-- Front-load damage: Playing Bash (apply Vulnerable) then attacking is very efficient.
-- Block enough to survive, but don't over-defend — killing the enemy faster means less total damage taken.
-- At rest sites: Smith (upgrade) is usually better than Rest unless you're below 50% HP.
-- At shops: Card removal (removing Strikes/Defends) is often the best purchase.
-- Elites give relics which are run-defining. Fight them when healthy.
-- Plan your map path to hit rest sites before bosses and elites.
+- Potions are powerful single-use items.
