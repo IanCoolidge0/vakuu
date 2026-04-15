@@ -45,20 +45,6 @@ A Slay the Spire 2 mod built with Godot.NET.Sdk and Harmony that embeds an HTTP 
 
 Combat actions are **synchronous** — the response waits until the game is ready for the next input (card resolved, enemy turn finished, etc.).
 
-The `/game/state` endpoint detects the current screen and includes screen-specific data:
-
-| Screen | Data |
-|--------|------|
-| `combat` | Use `/game/combat` for details |
-| `map` | Use `/game/map` for details |
-| `event` / `ancient` | Event name, body text, options with descriptions |
-| `card_reward` | Card choices with stats |
-| `rewards` | Reward items (gold, card, potion, relic) |
-| `rest` | Rest site options (rest, smith, etc.) |
-| `shop` | Cards, relics, potions with prices; card removal cost |
-| `card_select` | Card grid for upgrade/transform/remove |
-| `treasure` | Relic obtained |
-
 ### `sts2-agent/` — Agent Harness (Python)
 
 The harness connects an LLM to the game API using tool_use for structured action execution.
@@ -101,11 +87,16 @@ The harness connects an LLM to the game API using tool_use for structured action
    cd sts2-agent
    pip install -r requirements.txt
    ```
-3. Run:
+3. Run with Claude:
    ```
    python main.py --model claude-sonnet-4-6 --api-key sk-ant-...
    ```
    Or set `ANTHROPIC_API_KEY` as an environment variable and omit `--api-key`.
+4. Or with OpenAI:
+   ```
+   python main.py --model gpt-5.4-mini --provider openai --api-key sk-proj-...
+   ```
+   Or set `OPENAI_API_KEY` as an environment variable and omit `--api-key`.
 
 ### Running a Benchmark
 
@@ -114,6 +105,13 @@ The harness connects an LLM to the game API using tool_use for structured action
 3. Run the agent — it takes over from the current screen
 4. Watch the agent play in real time
 
+## Observations / Notes
+
+- For billing purposes, you can expect a full run (through Act 3) to spend ~1m input tokens, ~200k output, ~5m cache, for a total of ~$5-10 at Claude Sonnet pricing (as of april 2026)
+- In practice you likely won't hit this - the median run with current models does not make it to the Act 1 boss.
+- As models improve this will likely fluctuate.
+- Smaller models (Haiku, gpt-5.4-mini or nano) can be used, but they tend to have trouble with the tool calling and may require manual input at some points
+
 ## Status
 
 **Working:**
@@ -121,17 +119,15 @@ The harness connects an LLM to the game API using tool_use for structured action
 - Combat actions (play cards, end turn, use potions) with sync wait
 - Non-combat actions (map, events, rewards, rest, shop, card selection)
 - Name-based card resolution (no index guessing)
-- Claude provider with tool_use
+- Claude and OpenAI providers with tool_use and prompt caching
 
 **Known Issues / TODO:**
 - Character-specific mechanics (Regent stars, Necrobinder Osty, Defect orbs)
-- Various state transitions, nonstandard selection screens, and "Proceed" buttons require manual input
-- Some dynamic relic descriptions don't fully resolve
-- Screen transitions can occasionally need a re-poll
-- OpenAI / Gemini provider adapters not yet implemented
-- Run logging and metrics collection
+- Proceed buttons can occasionally confuse smaller models, and treasure rooms require manual input
+- Gemini/other provider adapters not yet implemented
 - Multi-run batch benchmarking
 - Seed control for reproducible comparisons
 - Persistent inter-run memory
+- Online crowdsourcing?
 
 
