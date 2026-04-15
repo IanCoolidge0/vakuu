@@ -17,7 +17,7 @@ from tools import get_tools_for_screen
 from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
-    format_card_select, format_hand_select,
+    format_card_select, format_hand_select, fmt_cost,
 )
 
 # ANSI color codes
@@ -190,7 +190,7 @@ class Agent:
         try:
             deck = self.client.get_deck()
             deck_str = "\n".join(
-                f"  {c['name']}{'+ ' if c['upgraded'] else ''} ({c['cost']}) [{c['type']}]"
+                f"  {c['name']}{'+ ' if c['upgraded'] else ''} ({fmt_cost(c['cost'])}) [{c['type']}]"
                 for c in deck.get("cards", [])
             )
         except Exception:
@@ -300,7 +300,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 lines.append(f"\nDeck ({len(cards)} cards):")
                 for c in cards:
                     up = "+" if c['upgraded'] else ""
-                    lines.append(f"  {c['name']}{up} ({c['cost']}) [{c['type']}] - {c['description']}")
+                    lines.append(f"  {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
         except Exception:
             pass
 
@@ -550,7 +550,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     lines = [f"Deck ({len(cards)} cards):"]
                     for i, c in enumerate(cards):
                         up = "+" if c['upgraded'] else ""
-                        lines.append(f"  [{i}] {c['name']}{up} ({c['cost']}) [{c['type']}]")
+                        lines.append(f"  [{i}] {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}]")
                     return "\n".join(lines)
                 case "view_map":
                     map_data = self.client.get_map()
@@ -559,14 +559,14 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     piles = self.client.get_combat_piles()
                     lines = [f"Draw pile ({piles['draw_pile_count']}):"]
                     for c in piles['draw_pile']:
-                        lines.append(f"  {c['name']} ({c['cost']}) [{c['type']}]")
+                        lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
                     lines.append(f"\nDiscard pile ({len(piles['discard_pile'])}):")
                     for c in piles['discard_pile']:
-                        lines.append(f"  {c['name']} ({c['cost']}) [{c['type']}]")
+                        lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
                     if piles['exhaust_pile']:
                         lines.append(f"\nExhaust pile ({len(piles['exhaust_pile'])}):")
                         for c in piles['exhaust_pile']:
-                            lines.append(f"  {c['name']} ({c['cost']}) [{c['type']}]")
+                            lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
                     return "\n".join(lines)
 
                 case _:

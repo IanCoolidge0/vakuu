@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using sts2_headless.sts2_headlessCode.Server;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using sts2_headless.sts2_headlessCode.Models;
 
@@ -94,7 +95,10 @@ public static class CombatActionHandler
         while (waited < phase1MaxMs)
         {
             if (!CombatManager.Instance.IsInProgress)
+            {
+                await WaitForPostCombatScreen();
                 return;
+            }
             if (!CombatManager.Instance.IsPlayPhase)
                 break;  // Action started processing
             if (AgentCardSelector.Pending is not null)
@@ -107,7 +111,10 @@ public static class CombatActionHandler
         while (waited < MaxWaitMs)
         {
             if (!CombatManager.Instance.IsInProgress)
+            {
+                await WaitForPostCombatScreen();
                 return;
+            }
             if (CombatManager.Instance.IsPlayPhase)
                 return;
             if (AgentCardSelector.Pending is not null)
@@ -116,6 +123,24 @@ public static class CombatActionHandler
             waited += PollIntervalMs;
         }
         // Timeout — return anyway, let the agent figure out the state
+    }
+
+    /// <summary>
+    /// After combat ends, wait briefly for the rewards overlay (or whatever
+    /// post-combat screen) to appear so the /game/state endpoint reports an
+    /// accurate screen instead of still saying "combat".
+    /// </summary>
+    private static async Task WaitForPostCombatScreen()
+    {
+        const int maxMs = 3000;
+        int waited = 0;
+        while (waited < maxMs)
+        {
+            var overlay = NOverlayStack.Instance?.Peek();
+            if (overlay is not null) return;
+            await Task.Delay(PollIntervalMs);
+            waited += PollIntervalMs;
+        }
     }
 
     private static string PlayCard(CombatActionRequest request, Player player,

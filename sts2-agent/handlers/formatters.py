@@ -2,9 +2,29 @@
 
 import json
 
+from compendium import format_enemies_section
+
+
+def fmt_cost(cost) -> str:
+    """Render a card cost — -1 is an X-cost card (spends all remaining energy)."""
+    return "X" if cost == -1 else str(cost)
+
 
 def format_combat(state: dict, combat: dict) -> str:
-    lines = [
+    lines = []
+
+    # On turn 1 only, inject encounter notes from the compendium so the
+    # agent knows each enemy's HP, moves, and attack pattern. Subsequent
+    # turns within the same combat reuse the context already in history.
+    if combat.get('turn') == 1:
+        enemy_names = [e['name'] for e in combat.get('enemies', []) if not e.get('is_dead')]
+        ascension = state.get('ascension', 0) if state else 0
+        notes = format_enemies_section(enemy_names, ascension)
+        if notes:
+            lines.append(notes)
+            lines.append("")
+
+    lines += [
         f"=== COMBAT (Turn {combat['turn']}) ===",
         f"Energy: {combat['energy']}/{combat['max_energy']}",
         f"HP: {combat['player']['hp']}/{combat['player']['max_hp']} | Block: {combat['player']['block']}",
@@ -33,7 +53,7 @@ def format_combat(state: dict, combat: dict) -> str:
     lines.append("YOUR HAND:")
     for i, c in enumerate(combat['hand']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {c['cost']}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
 
     lines.append("")
     lines.append(f"Draw pile: {combat['draw_pile_count']} | Discard: {combat['discard_pile_count']} | Exhaust: {combat['exhaust_pile_count']}")
@@ -88,7 +108,7 @@ def format_card_reward(state: dict) -> str:
     lines.append("\nChoose a card to add to your deck (or skip):")
     for i, c in enumerate(state['card_reward']['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {c['cost']}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
     return "\n".join(lines)
 
 
@@ -123,7 +143,7 @@ def format_shop(state: dict) -> str:
     for c in shop['cards']:
         upgraded = "+" if c['upgraded'] else ""
         affordable = "" if c['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  [{idx}] {c['name']}{upgraded} (cost {c['cost']}) [{c['type']}] - {c['price']}g{affordable} - {c['description']}")
+        lines.append(f"  [{idx}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['price']}g{affordable} - {c['description']}")
         idx += 1
     lines.append("Relics:")
     for r in shop['relics']:
@@ -176,7 +196,7 @@ def format_card_select(state: dict) -> str:
     lines.append("Choose a card, then confirm:")
     for i, c in enumerate(cs['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} ({c['cost']}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} ({fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
     return "\n".join(lines)
 
 
@@ -199,7 +219,7 @@ def format_hand_select(state: dict) -> str:
     ]
     for i, c in enumerate(hs['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {c['cost']}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
     return "\n".join(lines)
 
 

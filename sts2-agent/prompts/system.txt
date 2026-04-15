@@ -9,6 +9,7 @@ You are an expert Slay the Spire 2 player. You are piloting a real run of the ga
 ## Key STS2 concepts
 - You have a deck of cards. In combat, you draw 5 cards per turn (baseline) and get 3 energy (baseline) to play them.
 - Cards cost energy. Attack cards deal damage, Skill cards provide defense/utility, Power cards give persistent effects.
+- A card with cost "X" consumes all your remaining energy when played, and its effect scales with the amount of energy spent.
 - Enemies show their intent (what they'll do next turn).
 - Block prevents damage but resets each turn (unless you have specific powers/relics).
 - Vulnerable makes a target take 50% more damage from attacks.

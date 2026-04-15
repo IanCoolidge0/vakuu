@@ -1,0 +1,528 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Overgrowth",
+    "note": "Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). HP typically scales at A8+, damage/buffs at A9+. Use base fields as defaults; override by field when the current ascension has a matching prefixed field."
+  },
+  "enemies": {
+    "Nibbit": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "42-46",
+      "a8_hp": "44-48",
+      "moves": [
+        "Butt — 12 dmg",
+        "Hesitant Slice — 6 dmg + 5 block",
+        "Hiss — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Butt — 13 dmg",
+        "Hesitant Slice — 7 dmg + 6 block",
+        "Hiss — gains 3 Strength"
+      ],
+      "pattern": "Fixed cycle Butt → Hesitant Slice → Hiss. Solo Nibbit opens with Butt. Paired Nibbits start offset: front uses Hesitant Slice, back uses Hiss."
+    },
+    "Leaf Slime (S)": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "11-15",
+      "a8_hp": "12-16",
+      "moves": [
+        "Tackle — 3 dmg",
+        "Goop — shuffles 1 Slimed into discard pile"
+      ],
+      "a9_moves": [
+        "Tackle — 4 dmg",
+        "Goop — shuffles 1 Slimed into discard pile"
+      ],
+      "pattern": "Alternates Tackle/Goop, never same move twice in a row."
+    },
+    "Leaf Slime (M)": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "32-35",
+      "a8_hp": "33-36",
+      "moves": [
+        "Clump Shot — 8 dmg",
+        "Sticky Shot — shuffles 2 Slimed into discard pile"
+      ],
+      "a9_moves": [
+        "Clump Shot — 9 dmg",
+        "Sticky Shot — shuffles 2 Slimed into discard pile"
+      ],
+      "pattern": "Opens with Sticky Shot, then strictly alternates Clump Shot / Sticky Shot."
+    },
+    "Twig Slime (S)": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "7-11",
+      "a8_hp": "8-12",
+      "moves": [
+        "Tackle — 4 dmg"
+      ],
+      "a9_moves": [
+        "Tackle — 5 dmg"
+      ],
+      "pattern": "Always Tackle."
+    },
+    "Twig Slime (M)": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "26-28",
+      "a8_hp": "27-29",
+      "moves": [
+        "Chomp — 11 dmg",
+        "Sticky Shot — shuffles 1 Slimed into discard pile"
+      ],
+      "a9_moves": [
+        "Chomp — 12 dmg",
+        "Sticky Shot — shuffles 1 Slimed into discard pile"
+      ],
+      "pattern": "Opens with Sticky Shot. Then ~67% Chomp / 33% Sticky Shot, never repeats Sticky Shot."
+    },
+    "Shrinker Beetle": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "38-40",
+      "a8_hp": "40-42",
+      "moves": [
+        "Shrinker — applies Shrink debuff",
+        "Chomp — 7 dmg",
+        "Stomp — 13 dmg"
+      ],
+      "a9_moves": [
+        "Shrinker — applies Shrink debuff",
+        "Chomp — 8 dmg",
+        "Stomp — 14 dmg"
+      ],
+      "pattern": "Always opens with Shrinker, then alternates Chomp / Stomp."
+    },
+    "Fuzzy Wurm Crawler": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "55-57",
+      "a8_hp": "58-59",
+      "moves": [
+        "Acid Goop — 4 dmg (scales with accumulated Strength)",
+        "Inhale — gains 7 Strength"
+      ],
+      "pattern": "Fixed 3-turn cycle: Acid Goop → Inhale → Acid Goop. Inhale stacks 7 Strength every cycle."
+    },
+    "Inklet": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "11-17",
+      "a8_hp": "12-18",
+      "powers": [
+        "Slippery (1 stack) — reduces incoming damage"
+      ],
+      "moves": [
+        "Jab — 3 dmg",
+        "Windup Punch — 2 dmg × 3",
+        "Piercing Gaze — 10 dmg"
+      ],
+      "a9_moves": [
+        "Jab — 4 dmg",
+        "Windup Punch — 3 dmg × 3",
+        "Piercing Gaze — 11 dmg"
+      ],
+      "pattern": "Encounter is always 3 Inklets. Outer two open with Jab or Windup Punch; center always opens with Windup Punch. After any of Piercing Gaze/Windup Punch, they use Jab; after Jab, random Piercing Gaze or Windup Punch."
+    },
+    "Mawler": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "72",
+      "a8_hp": "76",
+      "moves": [
+        "Rip and Tear — 14 dmg",
+        "Roar — applies 3 Vulnerable (one-use per fight)",
+        "Claw — 4 dmg × 2"
+      ],
+      "a9_moves": [
+        "Rip and Tear — 16 dmg",
+        "Roar — applies 3 Vulnerable (one-use per fight)",
+        "Claw — 5 dmg × 2"
+      ],
+      "pattern": "Always opens with Claw. Then random of the three moves, never repeating. Roar only fires once per fight."
+    },
+    "Flyconid": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "47-49",
+      "a8_hp": "51-53",
+      "moves": [
+        "Weakening Spores — applies 2 Vulnerable",
+        "Frail Spores — 8 dmg + 2 Frail",
+        "Smash — 11 dmg"
+      ],
+      "a9_moves": [
+        "Weakening Spores — applies 2 Vulnerable",
+        "Frail Spores — 9 dmg + 2 Frail",
+        "Smash — 12 dmg"
+      ],
+      "pattern": "Turn 1: Frail Spores (2/3) or Smash (1/3), never opens with Weakening Spores. Later turns: Weakening (3/6), Frail (2/6), Smash (1/6), never repeats previous move."
+    },
+    "Snapping Jaxfruit": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "31-33",
+      "a8_hp": "34-36",
+      "moves": [
+        "Energy Orb — 3 dmg + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Energy Orb — 4 dmg + gains 2 Strength"
+      ],
+      "pattern": "Uses Energy Orb every turn."
+    },
+    "Fogmog": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "74",
+      "a8_hp": "78",
+      "moves": [
+        "Summon Eye With Teeth (opening)",
+        "Thwack — 8 dmg, gains 1 Strength",
+        "Headbutt — 14 dmg"
+      ],
+      "a9_moves": [
+        "Summon Eye With Teeth (opening)",
+        "Thwack — 9 dmg, gains 1 Strength",
+        "Headbutt — 16 dmg"
+      ],
+      "pattern": "Opens with summon, then Thwack. After that, alternates Thwack↔Headbutt (cannot repeat). Thwack compounds Strength every time."
+    },
+    "Eye With Teeth": {
+      "tier": "minion",
+      "act": 1,
+      "summoned_by": "Fogmog",
+      "hp": "6",
+      "a8_hp": "8",
+      "powers": [
+        "Illusion — revives at full HP the turn after destruction"
+      ],
+      "moves": [
+        "Distract — shuffles 3 Dazed into discard"
+      ],
+      "pattern": "Distract every turn."
+    },
+    "Wriggler": {
+      "tier": "minion",
+      "act": 1,
+      "summoned_by": "Phrog Parasite (4 on death, stunned first turn) or Dense Vegetation event (4, immediate)",
+      "hp": "17-21",
+      "a8_hp": "18-22",
+      "moves": [
+        "Nasty Bite — 6 dmg",
+        "Wriggle — shuffles 1 Infection into discard + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Nasty Bite — 7 dmg",
+        "Wriggle — shuffles 1 Infection into discard + gains 2 Strength"
+      ],
+      "pattern": "Alternates Nasty Bite / Wriggle. When multiple appear, odd-indexed start with Nasty Bite, even-indexed start with Wriggle."
+    },
+    "Cubex Construct": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "65",
+      "a8_hp": "70",
+      "powers": [
+        "13 starting Block",
+        "1 Artifact (negates first debuff)"
+      ],
+      "moves": [
+        "Charge Up — gains 2 Strength",
+        "Repeater Blast — 7 dmg, gains 2 Strength",
+        "Expel Blast — 5 dmg × 2",
+        "Submerge — gains 15 Block"
+      ],
+      "a9_moves": [
+        "Charge Up — gains 2 Strength",
+        "Repeater Blast — 8 dmg, gains 2 Strength",
+        "Expel Blast — 6 dmg × 2",
+        "Submerge — gains 15 Block"
+      ],
+      "pattern": "Opens with Charge Up, then cycles Repeater → Repeater → Expel Blast."
+    },
+    "Vine Shambler": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "61",
+      "a8_hp": "64",
+      "moves": [
+        "Swipe — 6 dmg × 2",
+        "Grasping Vines — 8 dmg + 1 Tangled",
+        "Chomp — 16 dmg"
+      ],
+      "a9_moves": [
+        "Swipe — 7 dmg × 2",
+        "Grasping Vines — 9 dmg + 1 Tangled",
+        "Chomp — 18 dmg"
+      ],
+      "pattern": "Fixed cycle Swipe → Grasping Vines → Chomp."
+    },
+    "Slithering Strangler": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "53-55",
+      "a8_hp": "54-56",
+      "moves": [
+        "Constrict — applies 3 Constrict",
+        "Thwack — 7 dmg, gains 5 Block",
+        "Lash — 12 dmg"
+      ],
+      "a9_moves": [
+        "Constrict — applies 3 Constrict",
+        "Thwack — 8 dmg, gains 5 Block",
+        "Lash — 13 dmg"
+      ],
+      "pattern": "Always opens with Constrict, then alternates Constrict with a random attack (50/50 Thwack or Lash)."
+    },
+    "Axe Raider": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Ruby Raiders",
+      "hp": "20-22",
+      "a8_hp": "21-23",
+      "moves": [
+        "Swing — 5 dmg, gains 5 Block",
+        "Big Swing — 12 dmg"
+      ],
+      "a9_moves": [
+        "Swing — 6 dmg, gains 6 Block",
+        "Big Swing — 13 dmg"
+      ],
+      "pattern": "Cycle Swing → Swing → Big Swing."
+    },
+    "Assassin Raider": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Ruby Raiders",
+      "hp": "18-23",
+      "a8_hp": "19-24",
+      "moves": [
+        "Killshot — 11 dmg"
+      ],
+      "a9_moves": [
+        "Killshot — 12 dmg"
+      ],
+      "pattern": "Killshot every turn."
+    },
+    "Brute Raider": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Ruby Raiders",
+      "hp": "30-33",
+      "a8_hp": "31-34",
+      "moves": [
+        "Beat — 7 dmg (scales with Strength)",
+        "Clap — gains 3 Strength"
+      ],
+      "a9_moves": [
+        "Beat — 8 dmg (scales with Strength)",
+        "Clap — gains 3 Strength"
+      ],
+      "pattern": "Alternates Beat → Clap, starting Beat. Strength stacks so Beat escalates."
+    },
+    "Crossbow Raider": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Ruby Raiders",
+      "hp": "18-21",
+      "a8_hp": "19-22",
+      "moves": [
+        "Reload — gains 3 Block",
+        "Fire! — 14 dmg"
+      ],
+      "a9_moves": [
+        "Reload — gains 3 Block",
+        "Fire! — 16 dmg"
+      ],
+      "pattern": "Alternates Reload → Fire!, starting with Reload. Only attacks every other turn."
+    },
+    "Tracker Raider": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Ruby Raiders",
+      "hp": "21-25",
+      "a8_hp": "22-26",
+      "moves": [
+        "Track — applies 2 Frail",
+        "Unleash the Hounds — 1 dmg × 8"
+      ],
+      "a9_moves": [
+        "Track — applies 2 Frail",
+        "Unleash the Hounds — 1 dmg × 9"
+      ],
+      "pattern": "Opens with Track, then Unleash the Hounds every subsequent turn."
+    },
+    "Bygone Effigy": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "127",
+      "a8_hp": "132",
+      "powers": [
+        "Slow (increases cost of repeated cards)"
+      ],
+      "moves": [
+        "Sleep (turn 1) — does nothing",
+        "Wake — gains 10 Strength",
+        "Slashes — 15 dmg"
+      ],
+      "a9_moves": [
+        "Sleep (turn 1) — does nothing",
+        "Wake — gains 10 Strength",
+        "Slashes — 17 dmg"
+      ],
+      "pattern": "Turn 1 Sleep, turn 2 Wake, then Slashes every turn."
+    },
+    "Byrdonis": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "91-94",
+      "a8_hp": "99",
+      "powers": [
+        "Territorial"
+      ],
+      "moves": [
+        "Swoop — 16 dmg",
+        "Peck — 3 dmg × 3"
+      ],
+      "a9_moves": [
+        "Swoop — 18 dmg",
+        "Peck — 4 dmg × 3"
+      ],
+      "pattern": "Alternates Swoop ↔ Peck."
+    },
+    "Phrog Parasite": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "61-64",
+      "a8_hp": "66-68",
+      "powers": [
+        "Infested — on death summons 4 Wrigglers (stunned first turn)"
+      ],
+      "moves": [
+        "Infect — shuffles 3 Infection cards into discard",
+        "Lash — 4 dmg × 4"
+      ],
+      "a9_moves": [
+        "Infect — shuffles 3 Infection cards into discard",
+        "Lash — 5 dmg × 4"
+      ],
+      "pattern": "Alternates Infect ↔ Lash."
+    },
+    "Ceremonial Beast": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "252",
+      "a8_hp": "262",
+      "moves": [
+        "Stamp (turn 1) — sets Plow threshold at 150 HP",
+        "Plow — 18 dmg + gains 2 Strength (phase 1)",
+        "Beast Cry — applies 1 Ringing (limits you to 1 card that turn)",
+        "Stomp — 15 dmg",
+        "Crush — 17 dmg + gains 3 Strength"
+      ],
+      "a9_moves": [
+        "Stamp (turn 1) — sets Plow threshold at 160 HP",
+        "Plow — 20 dmg + gains 2 Strength (phase 1)",
+        "Beast Cry — applies 1 Ringing (limits you to 1 card that turn)",
+        "Stomp — 17 dmg",
+        "Crush — 19 dmg + gains 4 Strength"
+      ],
+      "pattern": "Phase 1: Stamp then Plow every turn, stacking temporary Strength. When HP hits threshold, becomes stunned for one turn and loses all Strength. Phase 2: cycles Beast Cry → Stomp → Crush, Strength now permanent."
+    },
+    "The Kin": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "Priest 190, each Follower 58-59",
+      "a8_hp": "Priest 199, each Follower 62-63",
+      "powers": [
+        "Followers have Minion power"
+      ],
+      "moves": [
+        "[Priest] Orb of Frailty — 8 dmg + 1 Frail",
+        "[Priest] Orb of Weakness — 8 dmg + 1 Weak",
+        "[Priest] Soul Beam — 3 dmg × 3",
+        "[Priest] Dark Ritual — gains 2 Strength",
+        "[Follower] Quick Slash — 5 dmg",
+        "[Follower] Boomerang — 2 dmg × 2",
+        "[Follower] Power Dance — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "[Priest] Orb of Frailty — 9 dmg + 1 Frail",
+        "[Priest] Orb of Weakness — 9 dmg + 1 Weak",
+        "[Priest] Soul Beam — 3 dmg × 3",
+        "[Priest] Dark Ritual — gains 3 Strength",
+        "[Follower] Quick Slash — 5 dmg",
+        "[Follower] Boomerang — 2 dmg × 2",
+        "[Follower] Power Dance — gains 3 Strength"
+      ],
+      "pattern": "Priest cycles 4 moves in order: Frailty → Weakness → Soul Beam → Dark Ritual. Two Followers cycle 3 moves offset: one starts on Quick Slash, the other on Power Dance."
+    },
+    "Kin Priest": {
+      "tier": "boss",
+      "act": 1,
+      "group": "The Kin",
+      "hp": "190",
+      "a8_hp": "199",
+      "moves": [
+        "Orb of Frailty — 8 dmg + 1 Frail",
+        "Orb of Weakness — 8 dmg + 1 Weak",
+        "Soul Beam — 3 dmg × 3",
+        "Dark Ritual — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Orb of Frailty — 9 dmg + 1 Frail",
+        "Orb of Weakness — 9 dmg + 1 Weak",
+        "Soul Beam — 3 dmg × 3",
+        "Dark Ritual — gains 3 Strength"
+      ],
+      "pattern": "Fixed 4-move cycle: Frailty → Weakness → Soul Beam → Dark Ritual."
+    },
+    "Kin Follower": {
+      "tier": "boss",
+      "act": 1,
+      "group": "The Kin",
+      "hp": "58-59",
+      "a8_hp": "62-63",
+      "powers": [
+        "Minion"
+      ],
+      "moves": [
+        "Quick Slash — 5 dmg",
+        "Boomerang — 2 dmg × 2",
+        "Power Dance — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Quick Slash — 5 dmg",
+        "Boomerang — 2 dmg × 2",
+        "Power Dance — gains 3 Strength"
+      ],
+      "pattern": "3-move cycle. The two Followers start offset — one on Quick Slash, one on Power Dance."
+    },
+    "Vantom": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "173",
+      "a8_hp": "183",
+      "powers": [
+        "Slippery (9 stacks) — first 9 damage instances deal only 1 HP each"
+      ],
+      "moves": [
+        "Ink Blot — 7 dmg",
+        "Inky Lance — 6 dmg × 2",
+        "Dismember — 27 dmg + shuffles 3 Wound into discard",
+        "Prepare — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Ink Blot — 8 dmg",
+        "Inky Lance — 7 dmg × 2",
+        "Dismember — 30 dmg + shuffles 3 Wound into discard",
+        "Prepare — gains 2 Strength"
+      ],
+      "pattern": "Fixed cycle Ink Blot → Inky Lance → Dismember → Prepare, stacking 2 Strength per cycle."
+    }
+  }
+}
