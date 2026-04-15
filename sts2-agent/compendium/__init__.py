@@ -72,6 +72,22 @@ def format_enemy_block(name: str, ascension: int = 0) -> str | None:
 def format_enemies_section(names: list[str], ascension: int = 0) -> str:
     """Format a section for all known enemies in the encounter. Silently
     omits enemies without entries. Returns empty string if no entries match."""
+
+    # Special cases - append minion info for enemies that spawn minions
+
+    ## Overgrowth
+    if "Phrog Parasite" in names:
+        names.append("Wriggler")
+    if "Fogmog" in names:
+        names.append("Eye With Teeth")
+    if "The Kin" in names:
+        names.append("Kin Priest")
+        names.append("Kin Follower")
+
+    ## Underdocks TODO
+    ## Hive TODO
+    ## Glory TODO
+
     blocks = []
     seen = set()
     for name in names:
