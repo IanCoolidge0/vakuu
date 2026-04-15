@@ -10,6 +10,7 @@ class OpenAIProvider(LLMProvider):
                  api_key: str | None = None):
         super().__init__(model, system_prompt)
         self.client = OpenAI(api_key=api_key)
+        self.last_usage: dict | None = None
 
     def send(self, user_message: str, tools: list[dict]) -> tuple[str | None, list[dict]]:
         self.messages.append({"role": "user", "content": user_message})
@@ -64,6 +65,17 @@ class OpenAIProvider(LLMProvider):
             ]
 
         self.messages.append(assistant_msg)
+
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            details = getattr(usage, "prompt_tokens_details", None)
+            cache_read = getattr(details, "cached_tokens", 0) if details else 0
+            self.last_usage = {
+                "input": getattr(usage, "prompt_tokens", 0),
+                "output": getattr(usage, "completion_tokens", 0),
+                "cache_read": cache_read or 0,
+                "cache_creation": 0,  # OpenAI doesn't bill cache writes separately
+            }
 
         # Extract text and tool calls
         text_response = message.content

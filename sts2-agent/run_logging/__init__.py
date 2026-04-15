@@ -57,6 +57,14 @@ class SessionLogger:
     def error(self, msg: str):
         self._file.write(f"\n[{self._ts()}] ERROR: {msg}\n")
 
+    def usage(self, u: dict | None):
+        if not u:
+            return
+        self._file.write(
+            f"[{self._ts()}] USAGE: in={u.get('input', 0)} out={u.get('output', 0)} "
+            f"cache_read={u.get('cache_read', 0)} cache_creation={u.get('cache_creation', 0)}\n"
+        )
+
     def close(self):
         try:
             self._file.write(f"\n[{self._ts()}] === Session ended ===\n")

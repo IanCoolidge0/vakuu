@@ -363,6 +363,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             print(f"{MAGENTA}{text}{RESET}")
         if self.logger:
             self.logger.llm_text(text)
+            self.logger.usage(getattr(self.llm, "last_usage", None))
 
         # Handle tool call loop
         max_tool_rounds = 5
@@ -434,6 +435,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 print(f"{MAGENTA}{text}{RESET}")
             if self.logger:
                 self.logger.llm_text(text)
+                self.logger.usage(getattr(self.llm, "last_usage", None))
 
             # If a card play changed the screen, break so the main loop
             # picks up the new screen with correct tools and prompt.
