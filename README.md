@@ -114,11 +114,6 @@ The harness connects an LLM to the game API using tool_use for structured action
 3. Run the agent — it takes over from the current screen
 4. Watch the agent play in real time
 
-## Notes
-
-- Despite frequent cache resets, vakuu is token-heavy and expensive to run. As a rough estimate, a full run through Act 3 may cost ~$20 in tokens at Claude Sonnet pricing (as of 4/2026).
-- However, this is unlikely to happen in practice as all current models rarely make it to the Act 1 boss. 
-
 ## Status
 
 **Working:**
