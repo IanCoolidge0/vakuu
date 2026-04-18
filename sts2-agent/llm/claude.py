@@ -39,15 +39,19 @@ class ClaudeProvider(LLMProvider):
         self.messages.append({"role": "user", "content": user_message})
         return self._call(tools)
 
-    def send_tool_results(self, results: list[dict], tools: list[dict]) -> tuple[str | None, list[dict]]:
-        """Send results for all tool calls. results is [{tool_use_id, content}, ...]"""
-        self.messages.append({
-            "role": "user",
-            "content": [
-                {"type": "tool_result", "tool_use_id": r["tool_use_id"], "content": r["content"]}
-                for r in results
-            ]
-        })
+    def send_tool_results(self, results: list[dict], tools: list[dict],
+                          extra_text: str | None = None) -> tuple[str | None, list[dict]]:
+        """Send results for all tool calls. results is [{tool_use_id, content}, ...].
+        If `extra_text` is provided, it is appended as a text block in the same
+        user message — useful for piggy-backing a new screen's prompt onto the
+        tool_result when the action caused a screen transition."""
+        content = [
+            {"type": "tool_result", "tool_use_id": r["tool_use_id"], "content": r["content"]}
+            for r in results
+        ]
+        if extra_text:
+            content.append({"type": "text", "text": extra_text})
+        self.messages.append({"role": "user", "content": content})
         return self._call(tools)
 
     # Keep old method for compatibility

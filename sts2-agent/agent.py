@@ -378,6 +378,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             # Execute all tool calls and collect results
             results = []
             screen_changed = False
+            new_screen_state: dict | None = None  # set if screen changed
             for tool_call in tool_calls:
                 name = tool_call['name']
                 inp = tool_call['input']
@@ -411,6 +412,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                             check = self.client.get_state()
                             if check.get("screen") != screen:
                                 screen_changed = True
+                                new_screen_state = check
                     except Exception:
                         pass
 
@@ -424,9 +426,30 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
                 results.append({"tool_use_id": tool_call['id'], "content": result})
 
+            # If a combat action changed the screen (e.g. play Survivor →
+            # hand_select), piggy-back the new screen's prompt + tools onto
+            # the tool_result in the same round-trip. This lets the LLM plan
+            # once with full context instead of pre-emptively guessing on
+            # the old screen and re-deciding on the next turn.
+            extra_text = None
+            next_tools = tools
+            if screen_changed and new_screen_state is not None:
+                new_screen = new_screen_state.get("screen")
+                next_tools = get_tools_for_screen(new_screen)
+                try:
+                    new_prompt = self._build_prompt(new_screen, new_screen_state)
+                    extra_text = (
+                        f"The game transitioned to a new screen ({new_screen}). "
+                        f"Act on the new screen using its tools:\n\n{new_prompt}"
+                    )
+                except Exception:
+                    extra_text = None
+
             # Always send all results back - never leave dangling tool_use blocks
             try:
-                text, tool_calls = self.llm.send_tool_results(results, tools)
+                text, tool_calls = self.llm.send_tool_results(
+                    results, next_tools, extra_text=extra_text
+                )
                 self._pending_tool_calls = bool(tool_calls)
             except Exception as e:
                 print(f"{RED}LLM error on tool result: {e}{RESET}")
@@ -444,11 +467,16 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 self.logger.llm_text(text)
                 self.logger.usage(getattr(self.llm, "last_usage", None))
 
-            # If a card play changed the screen, break so the main loop
-            # picks up the new screen with correct tools and prompt.
-            if screen_changed:
-                self._pending_tool_calls = False
-                break
+            # After a screen change, update the loop's view of the current
+            # screen/tools so any further iterations operate on the new
+            # screen. Reset screen_changed so additional transitions inside
+            # this loop are detected correctly.
+            if screen_changed and new_screen_state is not None:
+                screen = new_screen_state.get("screen")
+                tools = next_tools
+                state = new_screen_state
+                screen_changed = False
+                new_screen_state = None
 
         # If the loop exited with pending tool_use blocks (max rounds,
         # screen change, etc.), send cancellation results to close them

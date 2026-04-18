@@ -16,14 +16,19 @@ class OpenAIProvider(LLMProvider):
         self.messages.append({"role": "user", "content": user_message})
         return self._call(tools)
 
-    def send_tool_results(self, results: list[dict], tools: list[dict]) -> tuple[str | None, list[dict]]:
-        """Send results for all tool calls. results is [{tool_use_id, content}, ...]"""
+    def send_tool_results(self, results: list[dict], tools: list[dict],
+                          extra_text: str | None = None) -> tuple[str | None, list[dict]]:
+        """Send results for all tool calls. If `extra_text` is provided, it's
+        appended as a follow-up user message — useful when the action changed
+        screens and we want the new screen's prompt in the same round-trip."""
         for r in results:
             self.messages.append({
                 "role": "tool",
                 "tool_call_id": r["tool_use_id"],
                 "content": r["content"],
             })
+        if extra_text:
+            self.messages.append({"role": "user", "content": extra_text})
         return self._call(tools)
 
     # Keep old method for compatibility
