@@ -396,8 +396,15 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 if self.logger:
                     self.logger.tool_result(name, result)
 
-                # Check if a play_card triggered a screen change (e.g. hand_select)
-                if name == "play_card" and not screen_changed:
+                # Check if a combat action triggered a screen change:
+                #  - play_card → hand_select (Armaments etc.) or rewards (kill)
+                #  - end_turn → rewards (poison/DoT kills enemy on turn-end)
+                #  - use_potion → rewards (damage potion kills) or hand_select
+                #  - select_hand_card → combat or onward if that selection ended combat
+                # Without this, the LLM keeps acting on the old screen's tools
+                # (e.g. proceeds past unclaimed rewards after an end_turn kill).
+                _screen_changing = {"play_card", "end_turn", "use_potion", "select_hand_card"}
+                if name in _screen_changing and not screen_changed:
                     try:
                         result_data = json.loads(result)
                         if isinstance(result_data, dict) and result_data.get("success"):
@@ -446,6 +453,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         # If the loop exited with pending tool_use blocks (max rounds,
         # screen change, etc.), send cancellation results to close them
         # properly instead of nuking the entire conversation history.
+        # Critically, pass tools=[] so the model's response is guaranteed
+        # text-only — otherwise it may emit another tool_use in reply to
+        # the cancellation, leaving a new dangling tool_use that will
+        # brick the next turn and force a catastrophic history clear.
         if tool_calls:
             dummy_results = [
                 {"tool_use_id": tc['id'],
@@ -453,7 +464,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 for tc in tool_calls
             ]
             try:
-                self.llm.send_tool_results(dummy_results, tools)
+                _, leftover = self.llm.send_tool_results(dummy_results, [])
+                if leftover:
+                    # Shouldn't happen with tools=[] but defend against it.
+                    self.llm.clear_history()
             except Exception:
                 self.llm.clear_history()
             self._pending_tool_calls = False

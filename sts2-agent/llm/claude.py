@@ -72,14 +72,19 @@ class ClaudeProvider(LLMProvider):
 
         cached_messages = _with_last_message_cache_marker(self.messages)
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=1024,
-            system=system_blocks if system_blocks else self.system_prompt,
-            tools=cached_tools,
-            tool_choice={"type": "auto", "disable_parallel_tool_use": True},
-            messages=cached_messages,
-        )
+        kwargs = {
+            "model": self.model,
+            "max_tokens": 1024,
+            "system": system_blocks if system_blocks else self.system_prompt,
+            "messages": cached_messages,
+        }
+        # Only set tools / tool_choice when there are tools — sending
+        # tool_choice with an empty tools list raises a 400.
+        if cached_tools:
+            kwargs["tools"] = cached_tools
+            kwargs["tool_choice"] = {"type": "auto", "disable_parallel_tool_use": True}
+
+        response = self.client.messages.create(**kwargs)
 
         # Build assistant message content
         assistant_content = []
