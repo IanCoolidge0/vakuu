@@ -174,7 +174,7 @@ public static class StateHandler
 
         // Check if map is open (overrides room type — map can show over finished events etc.)
         if (NMapScreen.Instance?.IsOpen == true)
-            return "map";
+            return MapScreenOrWaiting(state);
 
         // Fall back to room type
         var room = state.CurrentRoom;
@@ -182,12 +182,27 @@ public static class StateHandler
         {
             EventRoom eventRoom => DetectEventScreen(eventRoom),
             CombatRoom => "combat",
-            MapRoom => "map",
+            MapRoom => MapScreenOrWaiting(state),
             RestSiteRoom => "rest",
             MerchantRoom => "shop",
             TreasureRoom => "treasure",
             _ => "unknown"
         };
+    }
+
+    /// <summary>
+    /// Returns "map" when the agent can actually click a node, otherwise
+    /// "waiting" so the loop polls instead of guessing.
+    ///
+    /// At act transitions (e.g. after defeating the Act 1 boss, before the
+    /// Act 2 ancient auto-spawns) the map screen is briefly visible but
+    /// `CurrentMapCoord` is null and no nodes are clickable. Returning "map"
+    /// in that window makes the agent waste turns on phantom coordinates
+    /// until the next room loads.
+    /// </summary>
+    private static string MapScreenOrWaiting(MegaCrit.Sts2.Core.Runs.RunState state)
+    {
+        return state.CurrentMapCoord.HasValue ? "map" : "waiting";
     }
 
     private static string DetectEventScreen(EventRoom eventRoom)
@@ -322,17 +337,62 @@ public static class StateHandler
 
     private static TreasureInfo? BuildTreasureInfo(MegaCrit.Sts2.Core.Entities.Players.Player player)
     {
-        // The treasure relic is the most recently added relic
-        var lastRelic = player.Relics.LastOrDefault();
-        if (lastRelic is null)
+        var sceneRoot = ((Godot.SceneTree)Godot.Engine.GetMainLoop()).Root;
+        var treasureRoom = sceneRoot.GetNodeOrNull<MegaCrit.Sts2.Core.Nodes.Rooms.NTreasureRoom>(
+            "/root/Game/RootSceneContainer/Run/RoomContainer/TreasureRoom");
+        if (treasureRoom is null)
             return new TreasureInfo();
 
-        return new TreasureInfo
+        // Chest state derived from two flags on NTreasureRoom:
+        //  _hasChestBeenOpened — true once the chest has been clicked
+        //  _isRelicCollectionOpen — true while the picking screen is shown
+        // The picking screen closes after a relic is picked, so:
+        //  closed:  !_hasChestBeenOpened
+        //  open:    _hasChestBeenOpened && _isRelicCollectionOpen
+        //  claimed: _hasChestBeenOpened && !_isRelicCollectionOpen
+        string state;
+        if (!treasureRoom._hasChestBeenOpened)
+            state = "closed";
+        else if (treasureRoom._isRelicCollectionOpen)
+            state = "open";
+        else
+            state = "claimed";
+
+        var relics = new List<RelicInfo>();
+        // When the chest is open, expose the relic options the agent can pick.
+        if (state == "open" && treasureRoom._relicCollection is { } collection
+            && collection._holdersInUse is { } holders)
         {
-            RelicId = lastRelic.Id.ToString(),
-            RelicName = lastRelic.Title?.GetFormattedText() ?? lastRelic.Id.ToString(),
-            RelicDescription = CombatHandler.CleanDescription(lastRelic.DynamicDescription?.GetFormattedText() ?? "")
-        };
+            foreach (var holder in holders)
+            {
+                var model = holder.Relic?.Model;
+                if (model is null) continue;
+                relics.Add(new RelicInfo
+                {
+                    Id = model.Id.ToString(),
+                    Name = model.Title?.GetFormattedText() ?? model.Id.ToString(),
+                    Description = CombatHandler.CleanDescription(
+                        model.DynamicDescription?.GetFormattedText() ?? "")
+                });
+            }
+        }
+        // After the relic is claimed, show what was taken (most recently added relic).
+        else if (state == "claimed")
+        {
+            var lastRelic = player.Relics.LastOrDefault();
+            if (lastRelic is not null)
+            {
+                relics.Add(new RelicInfo
+                {
+                    Id = lastRelic.Id.ToString(),
+                    Name = lastRelic.Title?.GetFormattedText() ?? lastRelic.Id.ToString(),
+                    Description = CombatHandler.CleanDescription(
+                        lastRelic.DynamicDescription?.GetFormattedText() ?? "")
+                });
+            }
+        }
+
+        return new TreasureInfo { ChestState = state, Relics = relics };
     }
 
     private static CardSelectInfo? BuildCardSelectInfo()

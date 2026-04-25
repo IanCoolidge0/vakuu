@@ -90,6 +90,12 @@ class GameClient:
     def shop_remove_card(self) -> dict:
         return self._post("/game/action", {"type": "shop_remove_card"})
 
+    def open_chest(self) -> dict:
+        return self._post("/game/action", {"type": "open_chest"})
+
+    def pick_relic(self, index: int = 0) -> dict:
+        return self._post("/game/action", {"type": "pick_relic", "card_index": index})
+
     # --- Polling helpers ---
 
     def wait_for_screen(self, *expected_screens: str, max_retries: int = 10,

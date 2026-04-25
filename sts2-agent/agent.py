@@ -97,19 +97,15 @@ class Agent:
             # Don't clear on closely related screen flows
             related_screens = {
                 ("rewards", "card_reward"),
-                ("card_reward", "rewards"),
                 ("rewards", "card_select"),
-                ("card_select", "rewards"),
                 ("card_reward", "card_select"),
-                ("card_select", "card_reward"),
                 ("combat", "hand_select"),
-                ("hand_select", "combat"),
                 ("rest", "card_select"),
-                ("card_select", "rest"),
                 ("shop", "card_select"),
-                ("card_select", "shop"),
+                ("event", "card_select"),
+                ("ancient", "card_select")
             }
-            is_related = (self._last_screen, screen) in related_screens
+            is_related = (self._last_screen, screen) in related_screens or (screen, self._last_screen) in related_screens
             if screen != self._last_screen and not is_related and not self._pending_tool_calls:
                 self.llm.clear_history()
                 # Seed with strategic summary so the model has context
@@ -578,6 +574,12 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     if card_index is None:
                         return json.dumps({"error": f"Card '{card_name}' not in selection options."})
                     result = self.client.select_hand_card(card_index)
+
+                # Treasure room
+                case "open_chest":
+                    result = self.client.open_chest()
+                case "pick_relic":
+                    result = self.client.pick_relic(inp.get("index", 0))
 
                 # Card selection (upgrade, transform, remove)
                 case "select_card":

@@ -113,9 +113,11 @@ public record RestSiteOptionInfo
 
 public record TreasureInfo
 {
-    [JsonPropertyName("relic_id")] public string RelicId { get; init; } = "";
-    [JsonPropertyName("relic_name")] public string RelicName { get; init; } = "";
-    [JsonPropertyName("relic_description")] public string RelicDescription { get; init; } = "";
+    // chest_state: "closed" → chest visible, hasn't been clicked
+    //              "open"   → chest open, relic options shown (pick one)
+    //              "claimed"→ relic taken, ready to proceed
+    [JsonPropertyName("chest_state")] public string ChestState { get; init; } = "closed";
+    [JsonPropertyName("relics")] public List<RelicInfo> Relics { get; init; } = [];
 }
 
 public record EventInfo

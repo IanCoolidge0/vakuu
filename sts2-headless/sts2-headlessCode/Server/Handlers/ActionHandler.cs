@@ -16,6 +16,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
+using MegaCrit.Sts2.Core.Nodes.Screens.TreasureRoomRelic;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using sts2_headless.sts2_headlessCode.Models;
@@ -58,6 +59,8 @@ public static class ActionHandler
             "shop_remove_card" => ShopRemoveCard(request, run),
             "select_card" => SelectCard(request),
             "confirm_selection" => await ConfirmSelection(),
+            "open_chest" => OpenChest(),
+            "pick_relic" => PickRelic(request),
             _ => Error($"Unknown action type: {request.Type}")
         };
     }
@@ -164,6 +167,19 @@ public static class ActionHandler
         {
             merchantRoom.ProceedButton?.ForceClick();
             return Success("Proceeded from shop.");
+        }
+
+        // Try treasure room proceed
+        var treasureRoom = root.GetNodeOrNull<NTreasureRoom>(
+            "/root/Game/RootSceneContainer/Run/RoomContainer/TreasureRoom");
+        if (treasureRoom is not null)
+        {
+            var proceedBtn = treasureRoom.ProceedButton;
+            if (proceedBtn is not null && proceedBtn.IsEnabled)
+            {
+                proceedBtn.ForceClick();
+                return Success("Proceeded from treasure room.");
+            }
         }
 
         // Try event proceed
@@ -377,6 +393,51 @@ public static class ActionHandler
         }
 
         return Success("Confirmed selection.");
+    }
+
+    private static string OpenChest()
+    {
+        var root = ((SceneTree)Engine.GetMainLoop()).Root;
+        var treasureRoom = root.GetNodeOrNull<NTreasureRoom>(
+            "/root/Game/RootSceneContainer/Run/RoomContainer/TreasureRoom");
+        if (treasureRoom is null)
+            return Error("Not in a treasure room.");
+        if (treasureRoom._hasChestBeenOpened)
+            return Error("Chest is already open. Use pick_relic to take a relic, then proceed.");
+        if (treasureRoom._chestButton is null)
+            return Error("Chest button not found.");
+
+        treasureRoom._chestButton.ForceClick();
+        return Success("Opened the chest.");
+    }
+
+    private static string PickRelic(CombatActionRequest request)
+    {
+        var root = ((SceneTree)Engine.GetMainLoop()).Root;
+        var treasureRoom = root.GetNodeOrNull<NTreasureRoom>(
+            "/root/Game/RootSceneContainer/Run/RoomContainer/TreasureRoom");
+        if (treasureRoom is null)
+            return Error("Not in a treasure room.");
+        if (!treasureRoom._hasChestBeenOpened)
+            return Error("Chest is not open yet — call open_chest first.");
+        if (!treasureRoom._isRelicCollectionOpen)
+            return Error("Relic already claimed — proceed to leave the room.");
+
+        var collection = treasureRoom._relicCollection;
+        if (collection is null)
+            return Error("Relic collection not available.");
+
+        var holders = collection._holdersInUse;
+        if (holders is null || holders.Count == 0)
+            return Error("No relic holders in use.");
+
+        // Default to index 0 (singleplayer always has 1 relic).
+        int index = request.CardIndex ?? 0;
+        if (index < 0 || index >= holders.Count)
+            return Error($"index {index} out of range ({holders.Count} relics).");
+
+        collection.PickRelic(holders[index]);
+        return Success($"Picked relic at index {index}.");
     }
 
     // Godot node search helpers (same pattern as AutoSlay's UiHelper)

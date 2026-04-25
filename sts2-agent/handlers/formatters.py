@@ -226,7 +226,19 @@ def format_hand_select(state: dict) -> str:
 def format_treasure(state: dict) -> str:
     lines = [format_state(state)]
     t = state.get('treasure', {})
-    if t.get('relic_name'):
-        lines.append(f"\nTreasure: {t['relic_name']} - {t['relic_description']}")
-    lines.append("\nProceed to continue.")
+    chest = t.get('chest_state', 'closed')
+    relics = t.get('relics', []) or []
+
+    if chest == 'closed':
+        lines.append("\nThere is a closed chest in front of you. Use open_chest to reveal the relic.")
+    elif chest == 'open':
+        lines.append("\nThe chest is open. Pick a relic with pick_relic:")
+        for i, r in enumerate(relics):
+            desc = r.get('description', '')
+            lines.append(f"  [{i}] {r['name']} — {desc}")
+    elif chest == 'claimed':
+        if relics:
+            r = relics[0]
+            lines.append(f"\nYou took: {r['name']} — {r.get('description', '')}")
+        lines.append("\nProceed to leave the treasure room.")
     return "\n".join(lines)

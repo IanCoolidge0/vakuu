@@ -124,6 +124,32 @@ REWARDS_TOOLS = [
     },
 ]
 
+TREASURE_TOOLS = [
+    {
+        "name": "open_chest",
+        "description": "Open the treasure chest. Use this when chest_state is 'closed'. Reveals the relic inside.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "pick_relic",
+        "description": "Take a relic from the opened chest. Use this when chest_state is 'open'. Defaults to the first available relic.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer",
+                    "description": "Index of the relic to pick (0-based). Optional; defaults to 0 (the first/only relic)."
+                }
+            },
+            "required": []
+        }
+    },
+]
+
 REST_TOOLS = [
     {
         "name": "choose_rest_option",
@@ -272,7 +298,7 @@ def get_tools_for_screen(screen: str) -> list[dict]:
         case "shop":
             tools.extend(SHOP_TOOLS)
         case "treasure":
-            tools.extend(REWARDS_TOOLS)
+            tools.extend(TREASURE_TOOLS)
         case "hand_select":
             tools.extend(HAND_SELECT_TOOLS)
         case "card_select":
