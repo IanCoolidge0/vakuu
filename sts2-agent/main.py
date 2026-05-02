@@ -12,6 +12,8 @@ from client import GameClient
 from agent import Agent
 from llm.claude import ClaudeProvider
 from llm.openai import OpenAIProvider
+from llm.deepseek import DeepSeekProvider
+from llm.human import HumanProvider
 from run_logging import SessionLogger
 
 
@@ -19,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="STS2 Benchmark Agent")
     parser.add_argument("--model", default="claude-sonnet-4-20250514",
                         help="Model to use (default: claude-sonnet-4-20250514)")
-    parser.add_argument("--provider", default="claude", choices=["claude", "openai"],
+    parser.add_argument("--provider", default="claude", choices=["claude", "openai", "deepseek", "human"],
                         help="LLM provider (default: claude)")
     parser.add_argument("--url", default="http://localhost:58232",
                         help="Game API URL")
@@ -43,6 +45,11 @@ def main():
     # Create LLM provider
     if args.provider == "openai":
         llm = OpenAIProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
+    elif args.provider == "deepseek":
+        model = args.model if args.model != "claude-sonnet-4-20250514" else "deepseek-chat"
+        llm = DeepSeekProvider(model=model, system_prompt=system_prompt, api_key=args.api_key)
+    elif args.provider == "human":
+        llm = HumanProvider(model="human", system_prompt=system_prompt)
     else:
         llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
 
