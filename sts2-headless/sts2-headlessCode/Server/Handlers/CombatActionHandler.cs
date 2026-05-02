@@ -215,6 +215,13 @@ public static class CombatActionHandler
         if (!CombatManager.Instance.IsPlayPhase)
             return Error("Not in play phase.");
 
+        // End-of-turn powers (e.g. Well-Laid Plans retain) can trigger a card
+        // selection. Push an AgentCardSelector scope so the prompt is captured
+        // and surfaced as `hand_select` instead of stalling the game UI.
+        var selector = new AgentCardSelector("End of turn", "End-of-turn card selection.");
+        var selectorScope = CardSelectCmd.PushSelector(selector);
+        AgentCardSelector.SetSelectorScope(selectorScope);
+
         PlayerCmd.EndTurn(player, canBackOut: false);
 
         return Success("Ended turn.");
