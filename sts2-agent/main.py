@@ -31,6 +31,10 @@ def main():
                         help="Enable verbose LLM reasoning and agent output")
     parser.add_argument("--log-dir", default="logs",
                         help="Directory for session debug logs (default: logs)")
+    parser.add_argument("--tts", action="store_true",
+                        help="Narrate agent text via Kokoro TTS (requires kokoro-onnx + sounddevice)")
+    parser.add_argument("--tts-voice", default="af_sarah",
+                        help="Kokoro voice id (default: af_sarah)")
     args = parser.parse_args()
 
     # Load system prompt
@@ -59,8 +63,17 @@ def main():
     # Create session logger
     logger = SessionLogger(log_dir=args.log_dir, model=args.model, provider=args.provider)
 
+    # Optional TTS narration
+    tts = None
+    if args.tts:
+        try:
+            from tts import TTS
+            tts = TTS(voice=args.tts_voice)
+        except Exception as e:
+            print(f"\033[33m[tts] disabled: {e}\033[0m")
+
     # Create and run agent
-    agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger)
+    agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts)
 
     BLUE = "\033[34m"
     CYAN = "\033[36m"
@@ -99,6 +112,8 @@ def main():
         raise
     finally:
         logger.close()
+        if tts:
+            tts.stop()
 
 
 if __name__ == "__main__":

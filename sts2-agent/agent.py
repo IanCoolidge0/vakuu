@@ -33,11 +33,12 @@ RESET = "\033[0m"
 
 class Agent:
     def __init__(self, llm: LLMProvider, client: GameClient, verbose: bool = True,
-                 logger=None):
+                 logger=None, tts=None):
         self.llm = llm
         self.client = client
         self.verbose = verbose
         self.logger = logger
+        self.tts = tts
         self.last_act = 0
         self.action_count = 0
         self.max_actions = 2000  # safety limit per run
@@ -208,6 +209,9 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             if text:
                 print(f"\n{BOLD}{CYAN}--- VAKUU'S POSTMORTEM ---{RESET}")
                 print(f"{MAGENTA}{text}{RESET}")
+                if self.tts:
+                    self.tts.speak(text)
+                    self.tts.wait()
         except Exception as e:
             print(f"{RED}Postmortem failed: {e}{RESET}")
 
@@ -357,9 +361,15 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
         if text:
             print(f"{MAGENTA}{text}{RESET}")
+            if self.tts:
+                self.tts.speak(text)
         if self.logger:
             self.logger.llm_text(text)
             self.logger.usage(getattr(self.llm, "last_usage", None))
+        # Let the narration of this turn's reasoning finish before the
+        # corresponding tool calls fire.
+        if self.tts:
+            self.tts.wait()
 
         # Handle tool call loop
         max_tool_rounds = 5
@@ -459,9 +469,14 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
             if text:
                 print(f"{MAGENTA}{text}{RESET}")
+                if self.tts:
+                    self.tts.speak(text)
             if self.logger:
                 self.logger.llm_text(text)
                 self.logger.usage(getattr(self.llm, "last_usage", None))
+            # Wait for narration before the next round of tool calls fires.
+            if self.tts:
+                self.tts.wait()
 
             # After a screen change, update the loop's view of the current
             # screen/tools so any further iterations operate on the new
