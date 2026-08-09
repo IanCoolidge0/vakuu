@@ -3,7 +3,7 @@
 COMBAT_TOOLS = [
     {
         "name": "play_card",
-        "description": "Play a card from your hand by name. If you have multiple copies, the first one is played. Attack cards that deal damage to a single enemy require target_index.",
+        "description": "Play a card from your hand by name. If you have multiple copies, the first one is played. Attack cards that deal damage to a single enemy require target_index. The result includes your current hand after the play (draws and exhausts included).",
         "input_schema": {
             "type": "object",
             "properties": {

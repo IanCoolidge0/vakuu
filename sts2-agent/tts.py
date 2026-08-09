@@ -23,6 +23,49 @@ _MD_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s*", re.MULTILINE)
 _MD_CHARS_RE = re.compile(r"[*_`~]")
 
 
+class TTSToggle:
+    """Runtime-switchable holder for a TTS engine.
+
+    Always safe to hand to the agent as `tts=`: it is truthy, and
+    speak()/wait()/stop() no-op while disabled or if the engine failed to
+    load. The engine is constructed lazily on first enable, so runs launched
+    without narration pay nothing until it's switched on."""
+
+    def __init__(self, voice: str = "af_sarah", enabled: bool = False):
+        self.voice = voice
+        self.enabled = False
+        self._tts = None
+        if enabled:
+            self.set_enabled(True)
+
+    def set_enabled(self, on: bool) -> bool:
+        """Enable/disable narration; returns the resulting state (enabling
+        reports False if the engine can't be loaded)."""
+        if on and self._tts is None:
+            try:
+                self._tts = TTS(voice=self.voice)
+            except Exception as e:
+                print(f"\033[33m[tts] disabled: {e}\033[0m", flush=True)
+                self.enabled = False
+                return False
+        self.enabled = on
+        return self.enabled
+
+    def speak(self, text):
+        if self.enabled and self._tts:
+            self._tts.speak(text)
+
+    def wait(self):
+        # Drains anything already queued even right after a disable, so the
+        # agent's narration pacing stays consistent.
+        if self._tts:
+            self._tts.wait()
+
+    def stop(self):
+        if self._tts:
+            self._tts.stop()
+
+
 class TTS:
     def __init__(self, voice: str = "af_sarah", speed: float = 1.1, lang: str = "en-us",
                  debug: bool = True):

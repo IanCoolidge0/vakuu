@@ -3,6 +3,7 @@
 import argparse
 import sys
 import os
+import threading
 from pathlib import Path
 
 # Force unbuffered output so we see prints in real time
@@ -21,6 +22,7 @@ from llm.openai import OpenAIProvider
 from llm.deepseek import DeepSeekProvider
 from llm.human import HumanProvider
 from run_logging import SessionLogger
+from tts import TTSToggle
 
 # Vakuu sprite: rows are 16-px left halves, mirrored at render time.
 # Rendered 2 pixels per terminal line with ▀/▄ and truecolor ANSI.
@@ -97,6 +99,35 @@ def _banner_art(indent="  "):
     return "\n".join(lines)
 
 
+def _start_control_listener(agent, llm, tts, base_prompt, terse_suffix):
+    """Accept runtime toggles on stdin: `verbose on|off`, `tts on|off`,
+    `pause on|off`.
+
+    The high-level control channel for wrappers like gui.py — typing the
+    same commands into a terminal run works too. Ends quietly at EOF, so
+    piped/detached runs are unaffected. Not started for the human provider,
+    which owns stdin."""
+    def listen():
+        for line in sys.stdin:
+            words = line.strip().lower().split()
+            if len(words) != 2 or words[1] not in ("on", "off"):
+                continue
+            name, on = words[0], words[1] == "on"
+            if name == "verbose":
+                agent.verbose = on
+                llm.system_prompt = base_prompt if on else base_prompt + terse_suffix
+            elif name == "tts":
+                on = tts.set_enabled(on)
+            elif name == "pause":
+                agent.paused = on
+            else:
+                continue
+            print(f"\033[2m[ctl] {name} {'on' if on else 'off'}\033[0m", flush=True)
+
+    if sys.stdin is not None:
+        threading.Thread(target=listen, daemon=True).start()
+
+
 def main():
     parser = argparse.ArgumentParser(description="STS2 Benchmark Agent")
     parser.add_argument("--model", default="claude-sonnet-4-20250514",
@@ -117,14 +148,15 @@ def main():
                         help="Kokoro voice id (default: af_sarah)")
     args = parser.parse_args()
 
-    # Load system prompt
+    # Load system prompt. The terse suffix is kept separate so the runtime
+    # verbose toggle (see _start_control_listener) can swap it in and out.
     prompt_path = Path(__file__).parent / "prompts" / "system.txt"
-    system_prompt = prompt_path.read_text()
-    if not args.verbose:
-        if args.provider == "openai":
-            system_prompt += "\n\n## Output\nKeep reasoning brief — 1-2 short sentences max, then call the tool."
-        else:
-            system_prompt += "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
+    base_prompt = prompt_path.read_text()
+    if args.provider == "openai":
+        terse_suffix = "\n\n## Output\nKeep reasoning brief — 1-2 short sentences max, then call the tool."
+    else:
+        terse_suffix = "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
+    system_prompt = base_prompt if args.verbose else base_prompt + terse_suffix
 
     # Create LLM provider
     if args.provider == "openai":
@@ -143,17 +175,14 @@ def main():
     # Create session logger
     logger = SessionLogger(log_dir=args.log_dir, model=args.model, provider=args.provider)
 
-    # Optional TTS narration
-    tts = None
-    if args.tts:
-        try:
-            from tts import TTS
-            tts = TTS(voice=args.tts_voice)
-        except Exception as e:
-            print(f"\033[33m[tts] disabled: {e}\033[0m")
+    # TTS narration behind a runtime-switchable holder — safe to pass to the
+    # agent even when disabled, and the engine loads lazily on first enable.
+    tts = TTSToggle(voice=args.tts_voice, enabled=args.tts)
 
     # Create and run agent
     agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts)
+    if args.provider != "human":
+        _start_control_listener(agent, llm, tts, base_prompt, terse_suffix)
 
     CYAN = "\033[36m"
     BOLD = "\033[1m"

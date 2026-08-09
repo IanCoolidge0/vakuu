@@ -44,6 +44,7 @@ class Agent:
         self.verbose = verbose
         self.logger = logger
         self.tts = tts
+        self.paused = False  # set via the stdin control listener (main.py)
         self.last_act = 0
         self.action_count = 0
         self.max_actions = 2000  # safety limit per run
@@ -63,6 +64,16 @@ class Agent:
         print(f"{GREEN}Connected to STS2.{RESET}")
 
         while self.action_count < self.max_actions:
+            # Pause gate — idles between actions with all context (LLM
+            # history, stashed tool results) intact. Takes effect at the
+            # next loop boundary, so a pause requested mid-turn lands once
+            # the current action settles.
+            if self.paused:
+                print(f"{DIM}  (paused){RESET}")
+                while self.paused:
+                    time.sleep(0.3)
+                print(f"{DIM}  (resumed){RESET}")
+
             # Check if game is still running
             try:
                 self.client.health()
@@ -616,6 +627,16 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     check = self._settle_state(timeout=5.0)
                     if check is not None and check.get("screen") != screen:
                         screen_changed = True
+                    elif isinstance(result_data, dict):
+                        # Report the hand after the play. Draws, exhausts and
+                        # generated cards are otherwise invisible until the
+                        # next turn prompt — a human sees their hand at all
+                        # times, and the model can't derive hidden draws.
+                        # Contents only, no derived outcomes.
+                        hand = self._hand_names()
+                        if hand:
+                            result_data["hand"] = hand
+                            result = json.dumps(result_data)
                 elif success and name in ("choose_map_node", "choose_rest_option",
                                           "claim_reward", "proceed", "skip_rewards",
                                           "confirm_selection"):
