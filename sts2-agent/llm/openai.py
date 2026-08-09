@@ -1,4 +1,8 @@
-"""OpenAI LLM provider using the OpenAI SDK."""
+"""OpenAI LLM provider using the OpenAI SDK.
+
+Uses the Responses API: reasoning models (gpt-5.x) only support function
+tools there, and it works for non-reasoning models too.
+"""
 
 import json
 from openai import OpenAI
@@ -23,9 +27,9 @@ class OpenAIProvider(LLMProvider):
         screens and we want the new screen's prompt in the same round-trip."""
         for r in results:
             self.messages.append({
-                "role": "tool",
-                "tool_call_id": r["tool_use_id"],
-                "content": r["content"],
+                "type": "function_call_output",
+                "call_id": r["tool_use_id"],
+                "output": r["content"],
             })
         if extra_text:
             self.messages.append({"role": "user", "content": extra_text})
@@ -36,73 +40,57 @@ class OpenAIProvider(LLMProvider):
         return self.send_tool_results([{"tool_use_id": tool_use_id, "content": result}], tools)
 
     def _call(self, tools: list[dict]) -> tuple[str | None, list[dict]]:
-        # Convert Anthropic-style tool schemas to OpenAI function format
         openai_tools = [self._convert_tool(t) for t in tools] if tools else None
-
-        messages = [{"role": "system", "content": self.system_prompt}] + self.messages
 
         kwargs = {
             "model": self.model,
-            "max_completion_tokens": 1024,
-            "messages": messages,
+            # Reasoning tokens count against this cap, so it needs headroom
+            # beyond the visible reply.
+            "max_output_tokens": 4096,
+            "instructions": self.system_prompt,
+            "input": self.messages,
         }
         if openai_tools:
             kwargs["tools"] = openai_tools
             kwargs["parallel_tool_calls"] = False
 
-        response = self.client.chat.completions.create(**kwargs)
+        response = self.client.responses.create(**kwargs)
 
-        message = response.choices[0].message
-
-        # Build assistant message for history
-        assistant_msg = {"role": "assistant", "content": message.content}
-        if message.tool_calls:
-            assistant_msg["tool_calls"] = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                }
-                for tc in message.tool_calls
-            ]
-
-        self.messages.append(assistant_msg)
+        # Keep the raw output items (reasoning, message, function_call) in
+        # history — reasoning models require their reasoning items to be sent
+        # back alongside function_call_output on the next call.
+        self.messages.extend(response.output)
 
         usage = getattr(response, "usage", None)
         if usage is not None:
-            details = getattr(usage, "prompt_tokens_details", None)
+            details = getattr(usage, "input_tokens_details", None)
             cache_read = getattr(details, "cached_tokens", 0) if details else 0
             self.last_usage = {
-                "input": getattr(usage, "prompt_tokens", 0),
-                "output": getattr(usage, "completion_tokens", 0),
+                "input": getattr(usage, "input_tokens", 0),
+                "output": getattr(usage, "output_tokens", 0),
                 "cache_read": cache_read or 0,
                 "cache_creation": 0,  # OpenAI doesn't bill cache writes separately
             }
 
-        # Extract text and tool calls
-        text_response = message.content
+        text_response = response.output_text or None
         tool_calls = []
-        if message.tool_calls:
-            for tc in message.tool_calls:
+        for item in response.output:
+            if item.type == "function_call":
                 tool_calls.append({
-                    "name": tc.function.name,
-                    "input": json.loads(tc.function.arguments),
-                    "id": tc.id,
+                    "name": item.name,
+                    "input": json.loads(item.arguments),
+                    "id": item.call_id,
                 })
 
         return text_response, tool_calls
 
     @staticmethod
     def _convert_tool(tool: dict) -> dict:
-        """Convert Anthropic tool schema to OpenAI function calling format."""
+        """Convert Anthropic tool schema to Responses API function format."""
         return {
             "type": "function",
-            "function": {
-                "name": tool["name"],
-                "description": tool.get("description", ""),
-                "parameters": tool.get("input_schema", {}),
-            },
+            "name": tool["name"],
+            "description": tool.get("description", ""),
+            "parameters": tool.get("input_schema", {}),
+            "strict": False,
         }
