@@ -14,22 +14,7 @@
       ]
     },
     "missing": [
-      "Rendered enemy pages repeatedly label damage increases as Ascension 8 (Bowlbugs, Exoskeleton, Chomper, Louse Progenitor, Ovicopter, Myte, Slumbering Beetle). The data modules use {{Asc|9|VALUE|2}} for those same values. The modules were followed throughout; damage is recorded as a9_moves.",
-      "Imbalanced power — not defined in Module:Powers/StS2_data/Enemy. Effect text taken from Slay_the_Spire_2:Bowlbugs.",
-      "Tainted keyword — not defined in Module:Powers/StS2_data/Common, /Debuff, /Enemy or Module:Keywords/StS2_data/Common. Text 'Take X additional damage from Attacks this turn' taken from Slay_the_Spire_2:Infested_Prism.",
-      "Slay_the_Spire_2:Bowlbug is a 404; the group page Slay_the_Spire_2:Bowlbugs was used for all four Bowlbug variants.",
-      "Hatchling — no data-module entry and no standalone page. HP taken from Tough Egg's Hatch intent in Module:Enemies/StS2_data/Hive; moves and behaviour from Slay_the_Spire_2:Ovicopter.",
-      "Tough Egg — module StartsWith is '{{BD2|Hatch}}' with no counter value. The 2-turn / 1-turn hatch timing comes from Slay_the_Spire_2:Ovicopter.",
-      "Parafright — module defines BaseHP 21 but no AscHP field, so no a8_hp is recorded.",
-      "Exoskeleton — the page's own follow-up rule is self-contradictory: 'After Skitter, the next move is randomly Skitter or Mandibles (cannot repeat the same move twice in a row).' Recorded verbatim; a human should confirm whether Skitter can in fact repeat.",
-      "Ovicopter — no cap documented for repeat Lay Eggs summons.",
-      "The Obscura — module lists Illusion as a normal intent, but Slay_the_Spire_2:The_Obscura states it is used only on turn 1 and documents no cap or re-summon rule. Page text used.",
-      "Decimillipede — segment count (3) comes from Slay_the_Spire_2:Decimillipede; the module documents no encounter composition.",
-      "Knowledge Demon — the three Curse of Knowledge option pairs come from Slay_the_Spire_2:Knowledge_Demon; the module only states 'The options change each time this move is used.'",
-      "Crusher — 'Enlarging Strike' is literally 'Deals 4 damage.' in the module with no growth or scaling clause, despite the name. Worth double-checking in game.",
-      "Kaiser Crab — neither the module nor the page documents what happens when one body dies (beyond the Crab Rage power) or how the fight ends.",
-      "The Insatiable — no source documents what happens when Sandpit reaches 0 beyond the power text 'In X turns, you will be eaten and die.'",
-      "Mysterious Knight is defined in Module:Enemies/StS2_data/Hive but is not in any Hive encounter pool; Slay_the_Spire_2:Mysterious_Knight places it in the Act 2 event 'The Lantern Key'."
+      "Exoskeleton — the page's own follow-up rule is self-contradictory: 'After Skitter, the next move is randomly Skitter or Mandibles (cannot repeat the same move twice in a row).' Recorded verbatim; a human should confirm whether Skitter can in fact repeat."
     ]
   },
   "enemies": {
@@ -39,7 +24,7 @@
       "hp": "45-48",
       "a8_hp": "46-49",
       "powers": [
-        "Imbalanced — becomes Stunned when its attack is fully blocked; this requires at least 1 Block and all of the damage prevented"
+        "Imbalanced — becomes Stunned when its attack is fully blocked"
       ],
       "moves": [
         "Headbutt — 15 dmg",
