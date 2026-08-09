@@ -122,6 +122,15 @@ REWARDS_TOOLS = [
             "required": ["reward_type"]
         }
     },
+    {
+        "name": "skip_rewards",
+        "description": "Leave the rewards screen, permanently forfeiting any unclaimed rewards. Only use this when you deliberately don't want the remaining rewards or can't take them (e.g. potion slots full). To leave after claiming everything, use proceed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
 ]
 
 TREASURE_TOOLS = [
@@ -170,16 +179,16 @@ REST_TOOLS = [
 SHOP_TOOLS = [
     {
         "name": "shop_buy",
-        "description": "Buy an item from the shop. The index refers to the position among all stocked items (cards first, then relics, then potions).",
+        "description": "Buy an item from the shop by its name, exactly as listed in the inventory (e.g. 'Armaments', 'Strength Potion', 'Bash+').",
         "input_schema": {
             "type": "object",
             "properties": {
-                "slot_index": {
-                    "type": "integer",
-                    "description": "Index of the shop item to buy (0-based among stocked items)"
+                "item_name": {
+                    "type": "string",
+                    "description": "Name of the shop item to buy, as shown in the shop listing"
                 }
             },
-            "required": ["slot_index"]
+            "required": ["item_name"]
         }
     },
     {
@@ -197,7 +206,7 @@ SHOP_TOOLS = [
 UTILITY_TOOLS = [
     {
         "name": "proceed",
-        "description": "Leave the current room/screen by clicking its proceed button. Use this when you're done with the current screen — this includes leaving a shop with items you don't want, skipping remaining rewards, exiting a rest site after resting, or continuing after an event. Also works as an escape hatch if the screen is stuck (e.g. map clicks not registering after an event). Don't call this in the middle of combat or when you still want to take an action on the current screen.",
+        "description": "Leave the current room/screen by clicking its proceed button. Use this when you're done with the current screen — this includes leaving a shop with items you don't want, exiting a rest site after resting, or continuing after an event. It will refuse to leave a rewards screen with unclaimed rewards (use skip_rewards to forfeit them deliberately). Also works as an escape hatch if the screen is stuck (e.g. map clicks not registering after an event). Don't call this in the middle of combat or when you still want to take an action on the current screen.",
         "input_schema": {
             "type": "object",
             "properties": {},

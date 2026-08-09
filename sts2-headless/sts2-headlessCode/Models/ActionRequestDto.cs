@@ -12,6 +12,7 @@ public record ActionResponse
 public record CombatActionRequest
 {
     [JsonPropertyName("type")] public string Type { get; init; } = "";
+    [JsonPropertyName("name")] public string? Name { get; init; }
     [JsonPropertyName("card_index")] public int? CardIndex { get; init; }
     [JsonPropertyName("target_index")] public int? TargetIndex { get; init; }
     [JsonPropertyName("potion_index")] public int? PotionIndex { get; init; }

@@ -51,6 +51,7 @@ public static class ActionHandler
             "choose_map_node" => ChooseMapNode(request, run),
             "choose_event_option" => ChooseEventOption(request, run),
             "claim_reward" => ClaimReward(request),
+            "skip_rewards" => SkipRewards(),
             "proceed" => Proceed(run),
             "choose_rest_option" => ChooseRestOption(request, run),
             "choose_card_reward" => ChooseCardReward(request),
@@ -132,13 +133,48 @@ public static class ActionHandler
         return Success($"Claimed reward {rewardIndex}");
     }
 
+    private static string SkipRewards()
+    {
+        var overlay = NOverlayStack.Instance?.Peek();
+        if (overlay is not NRewardsScreen rewardsScreen)
+            return Error("Not on rewards screen.");
+
+        var proceedBtn = rewardsScreen._proceedButton
+                         ?? FindFirst<NProceedButton>(rewardsScreen);
+        if (proceedBtn is null)
+            return Error("Rewards proceed/skip button not found.");
+        if (!proceedBtn.IsEnabled)
+            return Error("Skipping is not allowed for this rewards screen.");
+
+        int unclaimed = rewardsScreen._rewardButtons
+            .Except(rewardsScreen._skippedRewardButtons)
+            .Count();
+        proceedBtn.ForceClick();
+        return Success(unclaimed > 0
+            ? $"Left rewards screen, forfeiting {unclaimed} unclaimed reward(s)."
+            : "Left rewards screen.");
+    }
+
     private static string Proceed(NRun run)
     {
         // Try rewards screen proceed button first
         var overlay = NOverlayStack.Instance?.Peek();
         if (overlay is NRewardsScreen rewardsScreen)
         {
-            var proceedBtn = FindFirst<NProceedButton>(rewardsScreen);
+            // The rewards screen's button doubles as "Skip" while unclaimed
+            // rewards remain — clicking it then forfeits them (the boss
+            // branch of OnProceedButtonPressed advances the act with no
+            // skip-guard at all). Refuse instead of force-clicking; the
+            // explicit skip_rewards action exists for deliberate forfeits.
+            int unclaimed = rewardsScreen._rewardButtons
+                .Except(rewardsScreen._skippedRewardButtons)
+                .Count();
+            if (unclaimed > 0)
+                return Error($"{unclaimed} unclaimed reward(s) remain — proceeding now would forfeit them. " +
+                             "Use claim_reward to take them, or skip_rewards to forfeit deliberately.");
+
+            var proceedBtn = rewardsScreen._proceedButton
+                             ?? FindFirst<NProceedButton>(rewardsScreen);
             if (proceedBtn is not null)
             {
                 proceedBtn.ForceClick();
@@ -165,8 +201,12 @@ public static class ActionHandler
             "/root/Game/RootSceneContainer/Run/RoomContainer/MerchantRoom");
         if (merchantRoom is not null)
         {
-            merchantRoom.ProceedButton?.ForceClick();
-            return Success("Proceeded from shop.");
+            var proceedBtn = merchantRoom.ProceedButton;
+            if (proceedBtn is not null && proceedBtn.IsEnabled)
+            {
+                proceedBtn.ForceClick();
+                return Success("Proceeded from shop.");
+            }
         }
 
         // Try treasure room proceed
@@ -256,27 +296,51 @@ public static class ActionHandler
 
     private static string ShopBuy(CombatActionRequest request, NRun run)
     {
-        if (request.CardIndex is null)
-            return Error("shop_buy requires card_index (slot index).");
-
-        int slotIndex = request.CardIndex.Value;
         var state = run._state;
 
         if (state.CurrentRoom is not MerchantRoom merchantRoom)
             return Error("Not in a shop.");
 
+        // Purchase by name: flat slot indices shift when an item is bought
+        // (everything after it renumbers), which made repeat purchases in
+        // one visit land on the wrong item. Names are stable for the whole
+        // shop visit.
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Error("shop_buy requires name (the item's name as listed in the shop).");
+
         var inventory = merchantRoom.GetLocalInventory();
-        var allEntries = inventory.AllEntries.Where(e => e.IsStocked).ToList();
+        string wanted = request.Name.Trim();
 
-        if (slotIndex < 0 || slotIndex >= allEntries.Count)
-            return Error($"Slot index {slotIndex} out of range ({allEntries.Count} stocked items).");
+        var stocked = new List<(string Name, MerchantEntry Entry)>();
+        foreach (var entry in inventory.CardEntries)
+        {
+            if (!entry.IsStocked || entry.CreationResult is null) continue;
+            var info = CombatHandler.BuildCardInfo(entry.CreationResult.Card);
+            stocked.Add((info.Name + (info.Upgraded ? "+" : ""), entry));
+        }
+        foreach (var entry in inventory.RelicEntries)
+        {
+            if (!entry.IsStocked || entry.Model is null) continue;
+            stocked.Add((entry.Model.Title?.GetFormattedText() ?? entry.Model.Id.ToString(), entry));
+        }
+        foreach (var entry in inventory.PotionEntries)
+        {
+            if (!entry.IsStocked || entry.Model is null) continue;
+            stocked.Add((entry.Model.Title?.GetFormattedText() ?? entry.Model.Id.ToString(), entry));
+        }
 
-        var entry = allEntries[slotIndex];
-        if (!entry.EnoughGold)
-            return Error($"Not enough gold (need {entry.Cost}).");
+        var match = stocked.FirstOrDefault(s =>
+            string.Equals(s.Name, wanted, StringComparison.OrdinalIgnoreCase));
 
-        _ = entry.OnTryPurchaseWrapper(inventory);
-        return Success($"Purchased item at index {slotIndex} (cost: {entry.Cost})");
+        if (match.Entry is null)
+            return Error($"'{wanted}' is not stocked. Available: " +
+                         string.Join(", ", stocked.Select(s => s.Name)));
+
+        if (!match.Entry.EnoughGold)
+            return Error($"Not enough gold for {match.Name} (need {match.Entry.Cost}).");
+
+        _ = match.Entry.OnTryPurchaseWrapper(inventory);
+        return Success($"Purchased {match.Name} (cost: {match.Entry.Cost})");
     }
 
     private static string ShopRemoveCard(CombatActionRequest request, NRun run)

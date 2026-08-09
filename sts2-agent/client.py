@@ -72,6 +72,9 @@ class GameClient:
     def claim_reward(self, index: int) -> dict:
         return self._post("/game/action", {"type": "claim_reward", "card_index": index})
 
+    def skip_rewards(self) -> dict:
+        return self._post("/game/action", {"type": "skip_rewards"})
+
     def proceed(self) -> dict:
         return self._post("/game/action", {"type": "proceed"})
 
@@ -84,8 +87,8 @@ class GameClient:
     def choose_rest_option(self, index: int) -> dict:
         return self._post("/game/action", {"type": "choose_rest_option", "card_index": index})
 
-    def shop_buy(self, index: int) -> dict:
-        return self._post("/game/action", {"type": "shop_buy", "card_index": index})
+    def shop_buy(self, name: str) -> dict:
+        return self._post("/game/action", {"type": "shop_buy", "name": name})
 
     def shop_remove_card(self) -> dict:
         return self._post("/game/action", {"type": "shop_remove_card"})

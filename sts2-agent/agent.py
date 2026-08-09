@@ -17,7 +17,7 @@ from tools import get_tools_for_screen
 from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
-    format_card_select, format_hand_select, fmt_cost,
+    format_card_select, format_hand_select, fmt_cost, clean_desc,
 )
 
 # ANSI color codes
@@ -29,6 +29,11 @@ YELLOW = "\033[33m"
 RED = "\033[31m"
 MAGENTA = "\033[35m"
 RESET = "\033[0m"
+
+# Max time the hand-draw animation takes at the start of a turn. A fixed
+# wait, not a poll — mid-animation reads can look complete (plausible count,
+# stable across reads) while cards are still arriving.
+HAND_DRAW_WAIT = 3.0
 
 
 class Agent:
@@ -228,7 +233,13 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         return None
 
     def _resolve_card_index(self, card_name: str) -> int | None:
-        """Resolve a card name to its index in the current hand."""
+        """Resolve a card name to its index in the current hand.
+
+        Exact and base-name matches only — no substring fallback. Many card
+        names nest ('Strike' is a substring of 'Pommel Strike'), so a fuzzy
+        match silently plays the wrong card when the requested one isn't in
+        hand. Better to fail and let the model re-decide with the real hand.
+        """
         try:
             combat = self.client.get_combat()
             hand = combat.get("hand", [])
@@ -243,30 +254,109 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             for i, card in enumerate(hand):
                 if card["name"].lower() == base_name.lower():
                     return i
-            # Partial match fallback
-            for i, card in enumerate(hand):
-                if base_name.lower() in card["name"].lower():
-                    return i
         except Exception:
             pass
         return None
+
+    def _hand_names(self) -> list[str]:
+        """Display names of the cards currently in hand."""
+        try:
+            hand = self.client.get_combat().get("hand", [])
+            return [c["name"] + ("+" if c["upgraded"] else "") for c in hand]
+        except Exception:
+            return []
 
     def _resolve_hand_select_index(self, card_name: str) -> int | None:
         """Resolve a card name to its index in the pending hand selection options."""
         try:
             state = self.client.get_state()
             cards = state.get("hand_select", {}).get("cards", [])
-            # Exact match first
             for i, card in enumerate(cards):
                 if card["name"].lower() == card_name.lower():
-                    return i
-            # Partial match fallback
-            for i, card in enumerate(cards):
-                if card_name.lower() in card["name"].lower():
                     return i
         except Exception:
             pass
         return None
+
+    def _hand_select_names(self) -> list[str]:
+        """Names of the cards in the pending hand selection options."""
+        try:
+            cards = self.client.get_state().get("hand_select", {}).get("cards", [])
+            return [c["name"] for c in cards]
+        except Exception:
+            return []
+
+    def _settle_state(self, timeout: float = 5.0) -> dict | None:
+        """Poll until the game reports a stable (non-transition) screen.
+        Returns that state, or None if it never settled."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                check = self.client.get_state()
+            except Exception:
+                time.sleep(0.3)
+                continue
+            if "error" not in check and check.get("screen") not in ("waiting", "unknown"):
+                return check
+            time.sleep(0.3)
+        return None
+
+    @staticmethod
+    def _state_fingerprint(state: dict) -> str:
+        """Stable digest of the observable game state, used to detect whether
+        a fire-and-forget action actually did anything. Covers same-screen
+        effects a screen check misses: rest heals (hp), reward claims (gold /
+        potions / relics / rewards list), and events releasing input
+        (options list)."""
+        rewards = state.get("rewards") or {}
+        event = state.get("event") or {}
+        keep = {
+            "screen": state.get("screen"),
+            "hp": state.get("hp"),
+            "max_hp": state.get("max_hp"),
+            "gold": state.get("gold"),
+            "floor": state.get("floor"),
+            "act": state.get("act"),
+            "potions": [p.get("name") for p in state.get("potions") or []],
+            "relics": [r.get("name") for r in state.get("relics") or []],
+            "rewards": [r.get("type") for r in rewards.get("rewards") or []],
+            "event": [event.get("name"),
+                      [o.get("label") for o in event.get("options") or []]],
+            "card_select": bool(state.get("card_select")),
+            "chest": (state.get("treasure") or {}).get("chest_state"),
+        }
+        return json.dumps(keep, sort_keys=True, default=str)
+
+    def _settle_transition(self, prev_state: dict,
+                           timeout: float = 15.0) -> tuple[dict | None, bool]:
+        """Wait for a fire-and-forget action (map click, rest option, reward
+        claim, proceed, confirm_selection) to produce an observable result.
+        The mod reports success while the game is still animating, so without
+        this the LLM gets phantom successes and acts on screens it has never
+        seen.
+
+        Returns (new_state, observed): new_state is set if the screen
+        changed; observed is True if any effect was seen (screen change, or
+        any state diff on the same screen — heal, claim, event closing)."""
+        prev_screen = prev_state.get("screen")
+        prev_print = self._state_fingerprint(prev_state)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                check = self.client.get_state()
+            except Exception:
+                time.sleep(0.3)
+                continue
+            screen = check.get("screen")
+            if "error" in check or screen in ("waiting", "unknown"):
+                time.sleep(0.3)
+                continue
+            if screen != prev_screen:
+                return check, True
+            if self._state_fingerprint(check) != prev_print:
+                return None, True
+            time.sleep(0.4)
+        return None, False
 
     def _build_summary(self, state: dict) -> str:
         """Build a strategic context summary for the start of a new screen."""
@@ -284,7 +374,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 if r.get('counter') is not None:
                     s += f" [{r['counter']}]"
                 if r.get('description'):
-                    s += f" ({r['description']})"
+                    s += f" ({clean_desc(r['description'])})"
                 relic_strs.append(s)
             lines.append("Relics: " + ", ".join(relic_strs))
 
@@ -300,7 +390,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 lines.append(f"\nDeck ({len(cards)} cards):")
                 for c in cards:
                     up = "+" if c['upgraded'] else ""
-                    lines.append(f"  {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
+                    lines.append(f"  {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
         except Exception:
             pass
 
@@ -310,13 +400,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         match screen:
             case "combat":
                 try:
+                    time.sleep(HAND_DRAW_WAIT)
                     combat = self.client.get_combat()
-                    # Wait for hand to be drawn if not full (combat just started)
-                    retries = 0
-                    while len(combat.get("hand", [])) < 4 and retries < 20:
-                        time.sleep(0.5)
-                        combat = self.client.get_combat()
-                        retries += 1
                     return format_combat(state, combat)
                 except Exception:
                     return format_state(state) + "\n(Failed to get combat details)"
@@ -384,11 +469,55 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             # Execute all tool calls and collect results
             results = []
             screen_changed = False
+            turn_ended = False
             new_screen_state: dict | None = None  # set if screen changed
             for tool_call in tool_calls:
                 name = tool_call['name']
                 inp = tool_call['input']
                 inp_str = ", ".join(f"{k}={v}" for k, v in inp.items()) if inp else ""
+
+                # Once a transition is detected, executing the rest of the
+                # batch would act blindly on a screen the LLM hasn't seen
+                # (e.g. a queued proceed firing into a just-opened shop).
+                if screen_changed:
+                    result = json.dumps({"error":
+                        "Cancelled — the game state changed after the previous "
+                        "action. Re-decide using the new state."})
+                    print(f"  {DIM}>>> {name}({inp_str}) [cancelled — state changed]{RESET}")
+                    if self.logger:
+                        self.logger.tool_call(name, inp)
+                        self.logger.tool_result(name, result)
+                    results.append({"tool_use_id": tool_call['id'], "content": result})
+                    continue
+
+                # proceed is valid on every screen, so it can fire into a
+                # screen the model has never seen (e.g. a rewards screen
+                # appearing right after a kill). Abort only when the live
+                # screen is one proceed can skip through — on map/combat/
+                # event screens it's harmless or is itself the recovery
+                # action (closing a lingering event that swallows map input).
+                _proceed_skippable = {"rewards", "shop", "rest", "treasure",
+                                      "card_reward", "card_select", "hand_select"}
+                if name == "proceed":
+                    try:
+                        live_state = self.client.get_state()
+                    except Exception:
+                        live_state = None
+                    live = live_state.get("screen") if live_state else None
+                    if (live_state is not None and "error" not in live_state
+                            and live != screen and live in _proceed_skippable):
+                        result = json.dumps({"error":
+                            f"Proceed aborted — the screen changed since your "
+                            f"last prompt (was '{screen}', now '{live}'). "
+                            "Act on the new state."})
+                        print(f"  {DIM}>>> proceed() [aborted — screen is now {live}]{RESET}")
+                        if self.logger:
+                            self.logger.tool_call(name, inp)
+                            self.logger.tool_result(name, result)
+                        screen_changed = True
+                        new_screen_state = live_state
+                        results.append({"tool_use_id": tool_call['id'], "content": result})
+                        continue
 
                 print(f"  {BOLD}{GREEN}>>> {name}({inp_str}){RESET}")
                 if self.logger:
@@ -400,43 +529,100 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 except Exception as e:
                     result = json.dumps({"error": str(e)})
 
-                if self.logger:
-                    self.logger.tool_result(name, result)
-
-                # Check if a combat action triggered a screen change:
-                #  - play_card → hand_select (Armaments etc.) or rewards (kill)
-                #  - end_turn → rewards (poison/DoT kills enemy on turn-end)
-                #  - use_potion → rewards (damage potion kills) or hand_select
-                #  - select_hand_card → combat or onward if that selection ended combat
-                # Without this, the LLM keeps acting on the old screen's tools
-                # (e.g. proceeds past unclaimed rewards after an end_turn kill).
-                _screen_changing = {"play_card", "end_turn", "use_potion", "select_hand_card"}
-                if name in _screen_changing and not screen_changed:
-                    try:
-                        result_data = json.loads(result)
-                        if isinstance(result_data, dict) and result_data.get("success"):
-                            check = self.client.get_state()
-                            if check.get("screen") != screen:
-                                screen_changed = True
-                                new_screen_state = check
-                    except Exception:
-                        pass
-
-                # Check for errors to show
+                result_data = None
+                success = False
                 try:
                     result_data = json.loads(result)
-                    if isinstance(result_data, dict) and result_data.get("error"):
-                        print(f"  {RED}!!! {result_data['error']}{RESET}")
+                    success = isinstance(result_data, dict) and bool(result_data.get("success"))
                 except (json.JSONDecodeError, TypeError):
                     pass
 
+                # Detect state transitions so the LLM never acts blind:
+                #  - end_turn resolves the enemy turn synchronously behind the
+                #    call — always hand back the new turn (or the post-combat
+                #    screen), otherwise the model plays cards into a turn it
+                #    has never seen, or blind-ends it entirely.
+                #  - play_card / use_potion / select_hand_card may change
+                #    screens (kill → rewards, Armaments → hand_select).
+                #  - choose_map_node / choose_rest_option / proceed /
+                #    confirm_selection are fire-and-forget in the mod: success
+                #    returns while the game is still transitioning, so wait
+                #    for the outcome to become observable before continuing.
+                if success and name == "end_turn":
+                    check = self._settle_state(timeout=8.0)
+                    if check is not None:
+                        screen_changed = True
+                        turn_ended = check.get("screen") == "combat"
+                        new_screen_state = check
+                elif success and name in ("play_card", "use_potion", "select_hand_card"):
+                    check = self._settle_state(timeout=5.0)
+                    if check is not None and check.get("screen") != screen:
+                        screen_changed = True
+                        new_screen_state = check
+                elif success and name in ("choose_map_node", "choose_rest_option",
+                                          "claim_reward", "proceed", "skip_rewards",
+                                          "confirm_selection"):
+                    # Claiming a card reward opens the card_reward screen
+                    # after a transition that can run long — give it headroom.
+                    settle_timeout = 20.0 if name == "claim_reward" else 15.0
+                    settled, observed = self._settle_transition(
+                        state, timeout=settle_timeout)
+                    if settled is not None:
+                        screen_changed = True
+                        new_screen_state = settled
+                    elif observed:
+                        # Same-screen effect landed (heal, claim, event
+                        # closing). Refresh the baseline so the next settled
+                        # action compares against current reality.
+                        try:
+                            state = self.client.get_state()
+                        except Exception:
+                            pass
+                    else:
+                        warning = (
+                            f"No state change was observed within "
+                            f"{int(settle_timeout)}s — the action may not have "
+                            "registered. A previous screen (e.g. an event) may "
+                            "still be open and swallowing input — proceed can "
+                            "close it. Verify with view_map/view_deck before "
+                            "repeating this action.")
+                        if name == "choose_map_node":
+                            # The usual culprit is a finished event whose
+                            # pending (invisible) proceed button still
+                            # swallows map clicks while get_state reports
+                            # "map". The mod's proceed clicks it regardless
+                            # of visibility — try that recovery directly,
+                            # but only while the screen still reads "map"
+                            # (never into a room that just finished loading).
+                            try:
+                                cur = self.client.get_state()
+                                rec = (self.client.proceed()
+                                       if cur.get("screen") == "map" else None)
+                                if isinstance(rec, dict) and rec.get("success"):
+                                    warning = (
+                                        "The map click did not register — a "
+                                        "lingering screen was swallowing input "
+                                        f"({rec.get('message')}). It has been "
+                                        "closed; retry your selection now.")
+                            except Exception:
+                                pass
+                        result_data["warning"] = warning
+                        result = json.dumps(result_data)
+
+                if self.logger:
+                    self.logger.tool_result(name, result)
+
+                # Check for errors to show
+                if isinstance(result_data, dict) and result_data.get("error"):
+                    print(f"  {RED}!!! {result_data['error']}{RESET}")
+
                 results.append({"tool_use_id": tool_call['id'], "content": result})
 
-            # If a combat action changed the screen (e.g. play Survivor →
-            # hand_select), piggy-back the new screen's prompt + tools onto
-            # the tool_result in the same round-trip. This lets the LLM plan
-            # once with full context instead of pre-emptively guessing on
-            # the old screen and re-deciding on the next turn.
+            # If an action changed the screen (e.g. play Survivor →
+            # hand_select) or ended the turn, piggy-back the new state's
+            # prompt + tools onto the tool_result in the same round-trip.
+            # This lets the LLM plan once with full context instead of
+            # pre-emptively guessing on state it has never seen.
             extra_text = None
             next_tools = tools
             if screen_changed and new_screen_state is not None:
@@ -444,10 +630,18 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 next_tools = get_tools_for_screen(new_screen)
                 try:
                     new_prompt = self._build_prompt(new_screen, new_screen_state)
-                    extra_text = (
-                        f"The game transitioned to a new screen ({new_screen}). "
-                        f"Act on the new screen using its tools:\n\n{new_prompt}"
-                    )
+                    if turn_ended:
+                        extra_text = (
+                            "Your turn ended and the enemies have acted. "
+                            f"Here is the new turn:\n\n{new_prompt}"
+                        )
+                    else:
+                        extra_text = (
+                            f"The game transitioned to a new screen ({new_screen}). "
+                            f"Act on the new screen using its tools:\n\n{new_prompt}"
+                        )
+                    if self.logger:
+                        self.logger.prompt(extra_text)
                 except Exception:
                     extra_text = None
 
@@ -487,6 +681,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 tools = next_tools
                 state = new_screen_state
                 screen_changed = False
+                turn_ended = False
                 new_screen_state = None
 
         # If the loop exited with pending tool_use blocks (max rounds,
@@ -499,7 +694,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         if tool_calls:
             dummy_results = [
                 {"tool_use_id": tc['id'],
-                 "content": json.dumps({"error": "Action cancelled — screen changed."})}
+                 "content": json.dumps({"error": "Action cancelled — the harness "
+                     "is refreshing the game state; it will be provided next."})}
                 for tc in tool_calls
             ]
             try:
@@ -526,7 +722,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                         # Resolve name to index from current hand
                         card_index = self._resolve_card_index(card_name)
                         if card_index is None:
-                            return json.dumps({"error": f"Card '{card_name}' not found in hand."})
+                            hand = self._hand_names()
+                            return json.dumps({"error":
+                                f"Card '{card_name}' is not in your hand. "
+                                f"Current hand: {hand if hand else 'unavailable'}"})
                     if card_index is None:
                         return json.dumps({"error": "play_card requires card_name or card_index."})
                     result = self.client.play_card(
@@ -567,6 +766,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     if reward_index is None:
                         reward_index = 0
                     result = self.client.claim_reward(reward_index)
+                case "skip_rewards":
+                    result = self.client.skip_rewards()
                 case "proceed":
                     result = self.client.proceed()
 
@@ -576,7 +777,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
                 # Shop
                 case "shop_buy":
-                    result = self.client.shop_buy(inp.get("slot_index", inp.get("card_index", 0)))
+                    item_name = inp.get("item_name") or inp.get("name")
+                    if not item_name:
+                        return json.dumps({"error": "shop_buy requires item_name."})
+                    result = self.client.shop_buy(item_name)
                 case "shop_remove_card":
                     result = self.client.shop_remove_card()
 
@@ -587,7 +791,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                         return json.dumps({"error": "select_hand_card requires card_name."})
                     card_index = self._resolve_hand_select_index(card_name)
                     if card_index is None:
-                        return json.dumps({"error": f"Card '{card_name}' not in selection options."})
+                        options = self._hand_select_names()
+                        return json.dumps({"error":
+                            f"Card '{card_name}' not in selection options. "
+                            f"Options: {options if options else 'unavailable'}"})
                     result = self.client.select_hand_card(card_index)
 
                 # Treasure room

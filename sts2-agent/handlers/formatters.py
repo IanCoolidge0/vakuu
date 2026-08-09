@@ -1,8 +1,26 @@
 """Format game state into readable text for the LLM."""
 
 import json
+import re
 
 from compendium import format_enemies_section
+
+# Card/relic text arrives from the mod with raw engine markup: inline icon
+# resource paths ("gain res://...energy_icon.pngres://...energy_icon.png")
+# and half-stripped localization templates (")|}"). Make it readable.
+_ENERGY_ICON_RE = re.compile(r"res://\S*?energy_icon\.png")
+_ICON_RE = re.compile(r"res://\S+?\.(?:png|svg|webp|jpe?g)")
+_MARKUP_RE = re.compile(r"[{}|]")
+
+
+def clean_desc(text) -> str:
+    """Sanitize a card/relic/option description for the LLM prompt."""
+    if not text:
+        return ""
+    text = _ENERGY_ICON_RE.sub("[E]", text)  # each icon = 1 energy
+    text = _ICON_RE.sub("", text)            # any other inline icon
+    text = _MARKUP_RE.sub("", text)          # template remnants like ')|}'
+    return text.strip()
 
 
 def fmt_cost(cost) -> str:
@@ -53,7 +71,7 @@ def format_combat(state: dict, combat: dict) -> str:
     lines.append("YOUR HAND:")
     for i, c in enumerate(combat['hand']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
 
     lines.append("")
     lines.append(f"Draw pile: {combat['draw_pile_count']} | Discard: {combat['discard_pile_count']} | Exhaust: {combat['exhaust_pile_count']}")
@@ -95,11 +113,11 @@ def format_event(state: dict) -> str:
     event = state['event']
     lines.append(f"\nEvent: {event['name']}")
     if event['body']:
-        lines.append(f"\n{event['body']}")
+        lines.append(f"\n{clean_desc(event['body'])}")
     lines.append("\nOptions:")
     for o in event['options']:
         locked = " [LOCKED]" if o['is_locked'] else ""
-        lines.append(f"  [{o['index']}] {o['label']}{locked}: {o['description']}")
+        lines.append(f"  [{o['index']}] {o['label']}{locked}: {clean_desc(o['description'])}")
     return "\n".join(lines)
 
 
@@ -108,7 +126,7 @@ def format_card_reward(state: dict) -> str:
     lines.append("\nChoose a card to add to your deck (or skip):")
     for i, c in enumerate(state['card_reward']['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
     return "\n".join(lines)
 
 
@@ -119,7 +137,7 @@ def format_rewards(state: dict) -> str:
         lines.append(f"\nRewards available ({len(rewards)}):")
         lines.append("Claim each reward, then proceed when done.")
         for i, r in enumerate(rewards):
-            lines.append(f"  [{i}] {r['type']}: {r['description']}")
+            lines.append(f"  [{i}] {r['type']}: {clean_desc(r['description'])}")
     else:
         lines.append("\nAll rewards claimed. Proceed to continue.")
     return "\n".join(lines)
@@ -130,31 +148,27 @@ def format_rest(state: dict) -> str:
     lines.append("\nRest site options:")
     for i, o in enumerate(state['rest_site']['options']):
         enabled = "" if o['is_enabled'] else " [DISABLED]"
-        lines.append(f"  [{i}] {o['label']}{enabled}: {o['description']}")
+        lines.append(f"  [{i}] {o['label']}{enabled}: {clean_desc(o['description'])}")
     return "\n".join(lines)
 
 
 def format_shop(state: dict) -> str:
     lines = [format_state(state)]
     shop = state['shop']
-    idx = 0
     lines.append(f"\nShop inventory (you have {state['gold']} gold):")
     lines.append("Cards:")
     for c in shop['cards']:
         upgraded = "+" if c['upgraded'] else ""
         affordable = "" if c['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  [{idx}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['price']}g{affordable} - {c['description']}")
-        idx += 1
+        lines.append(f"  {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['price']}g{affordable} - {clean_desc(c['description'])}")
     lines.append("Relics:")
     for r in shop['relics']:
         affordable = "" if r['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  [{idx}] {r['name']} - {r['price']}g{affordable} - {r['description']}")
-        idx += 1
+        lines.append(f"  {r['name']} - {r['price']}g{affordable} - {clean_desc(r['description'])}")
     lines.append("Potions:")
     for p in shop['potions']:
         affordable = "" if p['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  [{idx}] {p['name']} - {p['price']}g{affordable}")
-        idx += 1
+        lines.append(f"  {p['name']} - {p['price']}g{affordable}")
     if shop.get('card_removal_cost') is not None:
         affordable = "" if shop['card_removal_cost'] <= state['gold'] else " [CAN'T AFFORD]"
         lines.append(f"\nCard removal: {shop['card_removal_cost']}g{affordable}")
@@ -196,7 +210,7 @@ def format_card_select(state: dict) -> str:
     lines.append("Choose a card, then confirm:")
     for i, c in enumerate(cs['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} ({fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} ({fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
     return "\n".join(lines)
 
 
@@ -214,12 +228,12 @@ def format_hand_select(state: dict) -> str:
 
     lines = [
         f"=== CARD SELECTION ===",
-        f"{trigger}: {desc}",
+        f"{trigger}: {clean_desc(desc)}",
         f"Select {count_str} card(s):",
     ]
     for i, c in enumerate(hs['cards']):
         upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['description']}")
+        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
     return "\n".join(lines)
 
 
@@ -234,11 +248,10 @@ def format_treasure(state: dict) -> str:
     elif chest == 'open':
         lines.append("\nThe chest is open. Pick a relic with pick_relic:")
         for i, r in enumerate(relics):
-            desc = r.get('description', '')
-            lines.append(f"  [{i}] {r['name']} — {desc}")
+            lines.append(f"  [{i}] {r['name']} — {clean_desc(r.get('description', ''))}")
     elif chest == 'claimed':
         if relics:
             r = relics[0]
-            lines.append(f"\nYou took: {r['name']} — {r.get('description', '')}")
+            lines.append(f"\nYou took: {r['name']} — {clean_desc(r.get('description', ''))}")
         lines.append("\nProceed to leave the treasure room.")
     return "\n".join(lines)

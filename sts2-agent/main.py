@@ -8,6 +8,12 @@ from pathlib import Path
 # Force unbuffered output so we see prints in real time
 os.environ["PYTHONUNBUFFERED"] = "1"
 
+# Windows falls back to cp1252 when output is piped; the banner needs UTF-8
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from client import GameClient
 from agent import Agent
 from llm.claude import ClaudeProvider
@@ -15,6 +21,80 @@ from llm.openai import OpenAIProvider
 from llm.deepseek import DeepSeekProvider
 from llm.human import HumanProvider
 from run_logging import SessionLogger
+
+# Vakuu sprite: rows are 16-px left halves, mirrored at render time.
+# Rendered 2 pixels per terminal line with ▀/▄ and truecolor ANSI.
+_PAL = {
+    "k": (24, 26, 38), "s": (72, 84, 122), "S": (108, 126, 176),
+    "t": (150, 170, 216), "w": (52, 60, 92), "h": (172, 58, 50),
+    "H": (232, 110, 82), "e": (255, 196, 64), "E": (255, 244, 198),
+    "b": (216, 88, 48), "c": (96, 224, 214), "C": (54, 140, 148),
+    "g": (214, 164, 52), "G": (255, 224, 120),
+}
+
+_HALF = [
+    "....hh..........",
+    "....hHh.........",
+    "....hHh.........",
+    ".....hHh..kkkkkk",
+    ".....hHhkktttttt",
+    "......hHkttttttt",
+    "......kStkkkkttt",
+    "......kSteEEektt",
+    "......kSteEEektb",
+    "......kSttttttbb",
+    "......kStttttttb",
+    ".......kSSSSSSSS",
+    "....kwwksSSSSSSS",
+    "...kwswksSSSSSSS",
+    "...kwswksSSSSSSc",
+    "...kwswksSSSSScC",
+    "...kwswksSSSSScC",
+    "...kwswksSSSSSSc",
+    "....kwwksSSSSSSS",
+    ".....kwkSSSSSSSS",
+    "......kkSSSSSSSS",
+    "......kgggggGGgg",
+    ".....kggGGgggggg",
+    "....kkkkkkkkkkkk",
+]
+
+# Asymmetric floating glints, applied after mirroring
+_GLINTS = {(2, 19): "G", (29, 20): "G", (28, 13): "c", (3, 11): "c"}
+
+
+def _banner_art(indent="  "):
+    rows = []
+    for y, half in enumerate(_HALF):
+        row = list(half + half[::-1])
+        for (x, gy), ch in _GLINTS.items():
+            if gy == y:
+                row[x] = ch
+        rows.append(row)
+    lines = []
+    for y in range(0, len(rows), 2):
+        line, last = [], None
+        for t, b in zip(rows[y], rows[y + 1]):
+            fg, bg = _PAL.get(t), _PAL.get(b)
+            if not fg and not bg:
+                ch, colors = " ", (None, None)
+            elif fg and bg:
+                ch, colors = "▀", (fg, bg)
+            elif fg:
+                ch, colors = "▀", (fg, None)
+            else:
+                ch, colors = "▄", (bg, None)
+            if colors != last:
+                seq = "\033[0m"
+                if colors[0]:
+                    seq += "\033[38;2;%d;%d;%dm" % colors[0]
+                if colors[1]:
+                    seq += "\033[48;2;%d;%d;%dm" % colors[1]
+                line.append(seq)
+                last = colors
+            line.append(ch)
+        lines.append(indent + "".join(line) + "\033[0m")
+    return "\n".join(lines)
 
 
 def main():
@@ -75,26 +155,13 @@ def main():
     # Create and run agent
     agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts)
 
-    BLUE = "\033[34m"
     CYAN = "\033[36m"
-    YELLOW = "\033[33m"
-    RED = "\033[31m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
     RESET = "\033[0m"
 
-    print(f"{BLUE}")
-    print(f"                  ,--.")
-    print(f"         {RED}/\\{BLUE}      / {YELLOW}o o{BLUE} \\      {RED}/\\{BLUE}")
-    print(f"        {RED}/ _\\{BLUE}    |  {RED}\\>{BLUE}   |    {RED}/_ \\{BLUE}")
-    print(f"       {RED}|/ {BLUE} \\____|  ___  |____/ {RED}  \\|{BLUE}")
-    print(f"             /  \\{DIM}######{RESET}{BLUE}/  \\")
-    print(f"            /    \\{DIM}####{RESET}{BLUE}/    \\")
-    print(f"           (  {CYAN}~~{BLUE}  |{DIM}##{RESET}{BLUE}|  {CYAN}~~{BLUE}  )")
-    print(f"            \\    / .. \\    /")
-    print(f"          {YELLOW}  $$ {BLUE}/  /  \\  \\{YELLOW} $$")
-    print(f"          $${BLUE}  /  /    \\  \\ {YELLOW} $$")
-    print(f"         ${BLUE}   \\_/      \\_/{YELLOW}   ${RESET}")
+    print()
+    print(_banner_art())
     print()
     print(f"  {BOLD}{CYAN}V A K U U{RESET}{DIM}  -  STS2 Benchmark Agent{RESET}")
     print(f"  {DIM}Model:  {RESET}{args.model}")
