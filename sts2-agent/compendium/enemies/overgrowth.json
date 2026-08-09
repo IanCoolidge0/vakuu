@@ -1,7 +1,12 @@
 {
   "_meta": {
     "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Overgrowth",
-    "note": "Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). HP typically scales at A8+, damage/buffs at A9+. Use base fields as defaults; override by field when the current ascension has a matching prefixed field."
+    "note": "Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). HP typically scales at A8+, damage/buffs at A9+. Use base fields as defaults; override by field when the current ascension has a matching prefixed field.",
+    "summons": {
+      "Phrog Parasite": ["Wriggler"],
+      "Fogmog": ["Eye With Teeth"],
+      "The Kin": ["Kin Priest", "Kin Follower"]
+    }
   },
   "enemies": {
     "Nibbit": {

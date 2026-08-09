@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed 's/\".*//')",
+      "Bash(ilspycmd \"/c/program files \\(x86\\)/steam/steamapps/common/Slay the Spire 2/data_sts2_windows_x86_64/sts2.dll\")",
+      "Bash(curl:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(python3 -c \"import json,sys; print\\(json.load\\(sys.stdin\\).get\\('message',''\\)\\)\")",
+      "WebFetch(domain:slaythespire.wiki.gg)"
+    ]
+  }
+}

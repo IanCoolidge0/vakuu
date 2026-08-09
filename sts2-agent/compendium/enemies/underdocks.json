@@ -1,0 +1,447 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Underdocks",
+    "note": "Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). HP typically scales at A8+, damage/buffs at A9+. Use base fields as defaults; override by field when the current ascension has a matching prefixed field. NOTE: Gremlin Merc is the one exception in this act — its attack damage scales at Ascension 8, so its override list is a8_moves.",
+    "summons": {
+      "Living Fog": [
+        "Gas Bomb"
+      ],
+      "Gremlin Merc": [
+        "Fat Gremlin",
+        "Sneaky Gremlin"
+      ],
+      "Two-Tailed Rat": [
+        "Two-Tailed Rat"
+      ]
+    },
+    "missing": [
+      "Slay_the_Spire_2:Toadpole — page documents the Thorns power but never states a starting Thorns count, and the enemy data module lists no StartsWith field for it; `powers` omitted. Toadpole only gains Thorns in combat via Spiken.",
+      "Slay_the_Spire_2:Gas_Bomb, Slay_the_Spire_2:Calcified_Cultist, Slay_the_Spire_2:Damp_Cultist — no standalone pages (404). Full stats taken from Slay_the_Spire_2:Living_Fog, Slay_the_Spire_2:Cultists and Module:Enemies/StS2_data/Underdocks.",
+      "Lagavulin Matriarch Slash2: data module scales damage at A9 but Block at A8 ({{Asc|8|14|2}}) — likely wiki typo; a9_moves uses 14/14, but the Block bump may start at A8.",
+      "Waterfall Giant Siphon: heal is '15 HP per player' verbatim (implies unspecified multiplayer scaling); no ascension variant documented."
+    ]
+  },
+  "enemies": {
+    "Corpse Slug": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "25-27",
+      "a8_hp": "27-29",
+      "powers": [
+        "Ravenous 4 (5 at A9) — when an enemy dies, Corpse Slug immediately eats it, becoming Stunned and gaining that much Strength"
+      ],
+      "moves": [
+        "Whip Slap — 3 dmg × 2",
+        "Glomp — 8 dmg",
+        "Goop — applies 2 Frail"
+      ],
+      "a9_moves": [
+        "Whip Slap — 3 dmg × 2",
+        "Glomp — 9 dmg",
+        "Goop — applies 2 Frail"
+      ],
+      "pattern": "Fixed cycle Whip Slap → Glomp → Goop; each Corpse Slug starts on a different move in the cycle. Appears as 2 Corpse Slugs (weak encounter) or 3 (normal encounter)."
+    },
+    "Seapunk": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "44-46",
+      "a8_hp": "47-49",
+      "moves": [
+        "Sea Kick — 11 dmg",
+        "Spinning Kick — 2 dmg × 4",
+        "Bubble Burp — gains 7 Block and 1 Strength"
+      ],
+      "a9_moves": [
+        "Sea Kick — 13 dmg",
+        "Spinning Kick — 2 dmg × 4",
+        "Bubble Burp — gains 8 Block and 2 Strength"
+      ],
+      "pattern": "Fixed cycle Sea Kick → Spinning Kick → Bubble Burp, repeating. Appears solo (weak encounter) or paired with a Calcified Cultist (normal encounter)."
+    },
+    "Sludge Spinner": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "37-39",
+      "a8_hp": "41-42",
+      "moves": [
+        "Oil Spray — 8 dmg + applies 1 Weak",
+        "Slam — 11 dmg",
+        "Rage — 6 dmg + gains 3 Strength"
+      ],
+      "a9_moves": [
+        "Oil Spray — 9 dmg + applies 1 Weak",
+        "Slam — 12 dmg",
+        "Rage — 7 dmg + gains 3 Strength"
+      ],
+      "pattern": "Always uses Oil Spray first. After that, randomly uses one of its three moves each turn, and cannot use the same move twice in a row. Appears solo in the weak encounter."
+    },
+    "Toadpole": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "21-25",
+      "a8_hp": "22-26",
+      "moves": [
+        "Whirl — 7 dmg",
+        "Spiken — gains 2 Thorns",
+        "Spike Spit — 3 dmg × 3, removes 2 Thorns from self"
+      ],
+      "a9_moves": [
+        "Whirl — 8 dmg",
+        "Spiken — gains 2 Thorns",
+        "Spike Spit — 4 dmg × 3, removes 2 Thorns from self"
+      ],
+      "pattern": "Fixed cycle Whirl → Spiken → Spike Spit, repeating. In the Toadpoles weak encounter (2 Toadpoles) the front Toadpole starts with Spiken instead."
+    },
+    "Calcified Cultist": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Cultists",
+      "hp": "38-41",
+      "a8_hp": "39-42",
+      "moves": [
+        "Incantation — gains 2 Ritual",
+        "Dark Strike — 9 dmg"
+      ],
+      "a9_moves": [
+        "Incantation — gains 2 Ritual",
+        "Dark Strike — 11 dmg"
+      ],
+      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 2 Strength at end of turn, but it does not gain Strength on the turn it uses Incantation. Appears paired with a Damp Cultist, or paired with a Seapunk."
+    },
+    "Damp Cultist": {
+      "tier": "regular",
+      "act": 1,
+      "group": "Cultists",
+      "hp": "51-53",
+      "a8_hp": "52-54",
+      "moves": [
+        "Incantation — gains 5 Ritual",
+        "Dark Strike — 1 dmg"
+      ],
+      "a9_moves": [
+        "Incantation — gains 6 Ritual",
+        "Dark Strike — 3 dmg"
+      ],
+      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 5 Strength (6 at A9) at end of turn and does not trigger on the Incantation turn. Appears paired with a Calcified Cultist."
+    },
+    "Living Fog": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "80",
+      "a8_hp": "82",
+      "moves": [
+        "Advanced Gas — 8 dmg + applies 1 Smoggy (limits you to 1 Skill per turn; does not stack)",
+        "Bloat — 5 dmg + summons 1 Gas Bomb",
+        "Super Gas Blast — 8 dmg"
+      ],
+      "a9_moves": [
+        "Advanced Gas — 9 dmg + applies 1 Smoggy (limits you to 1 Skill per turn; does not stack)",
+        "Bloat — 6 dmg + summons 1 Gas Bomb",
+        "Super Gas Blast — 9 dmg"
+      ],
+      "pattern": "Always uses Advanced Gas first, then alternates Bloat ↔ Super Gas Blast."
+    },
+    "Gas Bomb": {
+      "tier": "minion",
+      "act": 1,
+      "summoned_by": "Living Fog (1 per Bloat)",
+      "hp": "7",
+      "a8_hp": "8",
+      "powers": [
+        "Minion — abandons combat if its leader is gone"
+      ],
+      "moves": [
+        "Explode — 8 dmg, then dies"
+      ],
+      "a9_moves": [
+        "Explode — 9 dmg, then dies"
+      ],
+      "pattern": "Uses Explode every turn."
+    },
+    "Fossil Stalker": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "51-53",
+      "a8_hp": "54-56",
+      "powers": [
+        "Suck 3 — whenever it deals unblocked attack damage, it gains 3 Strength"
+      ],
+      "moves": [
+        "Latch — 12 dmg",
+        "Tackle — 9 dmg + applies 1 Frail",
+        "Lash — 3 dmg × 2"
+      ],
+      "a9_moves": [
+        "Latch — 14 dmg",
+        "Tackle — 11 dmg + applies 1 Frail",
+        "Lash — 4 dmg × 2"
+      ],
+      "pattern": "Always opens with Latch. Every turn after, picks randomly with equal probability (1/3 each) among Latch, Tackle and Lash, with no restriction on repeating the same move. Suck triggers per unblocked hit. Appears solo."
+    },
+    "Gremlin Merc": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "47-49",
+      "a8_hp": "51-53",
+      "powers": [
+        "Surprise 1 — on death, summons 1 Fat Gremlin and 1 Sneaky Gremlin",
+        "Thievery 20 — steals the player's gold (the Fat Gremlin carries it off via Heist)"
+      ],
+      "moves": [
+        "Gimme — 7 dmg × 2",
+        "Double Smash — 6 dmg × 2 + applies 2 Weak",
+        "Hehe — 8 dmg + gains 2 Strength"
+      ],
+      "a8_moves": [
+        "Gimme — 8 dmg × 2",
+        "Double Smash — 7 dmg × 2 + applies 2 Weak",
+        "Hehe — 9 dmg + gains 2 Strength"
+      ],
+      "pattern": "Fixed cycle Gimme → Double Smash → Hehe, repeating."
+    },
+    "Fat Gremlin": {
+      "tier": "minion",
+      "act": 1,
+      "summoned_by": "Gremlin Merc (1, on death)",
+      "hp": "13-17",
+      "a8_hp": "14-18",
+      "moves": [
+        "Spawned — does nothing (first turn only)",
+        "Flee — escapes combat with the stolen gold"
+      ],
+      "pattern": "Does nothing the turn it is summoned, then uses Flee every turn after, escaping with the gold the Gremlin Merc stole. If it is killed before fleeing, the stolen gold is recovered."
+    },
+    "Sneaky Gremlin": {
+      "tier": "minion",
+      "act": 1,
+      "summoned_by": "Gremlin Merc (1, on death)",
+      "hp": "10-14",
+      "a8_hp": "11-15",
+      "moves": [
+        "Spawned — does nothing (first turn only)",
+        "Tackle — 9 dmg"
+      ],
+      "a9_moves": [
+        "Spawned — does nothing (first turn only)",
+        "Tackle — 10 dmg"
+      ],
+      "pattern": "Does nothing the turn it is summoned, then uses Tackle every turn after."
+    },
+    "Haunted Ship": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "63",
+      "a8_hp": "67",
+      "moves": [
+        "Haunt — shuffles 5 Dazed into your discard pile + applies 3 Weak",
+        "Swipe — 13 dmg",
+        "Stomp — 4 dmg × 3"
+      ],
+      "a9_moves": [
+        "Haunt — shuffles 5 Dazed into your discard pile + applies 3 Weak",
+        "Swipe — 14 dmg",
+        "Stomp — 5 dmg × 3"
+      ],
+      "pattern": "Always uses Haunt first. From the second turn onward, alternates Swipe ↔ Stomp, always starting with Swipe. Haunt is used only on turn 1. Appears solo."
+    },
+    "Punch Construct": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "55",
+      "a8_hp": "60",
+      "powers": [
+        "Artifact 1 — negates the first debuff applied to it"
+      ],
+      "moves": [
+        "READY — gains 10 Block",
+        "Fast Punch — 5 dmg × 2 + applies 1 Frail",
+        "Strong Punch — 14 dmg"
+      ],
+      "a9_moves": [
+        "READY — gains 10 Block",
+        "Fast Punch — 6 dmg × 2 + applies 1 Frail",
+        "Strong Punch — 16 dmg"
+      ],
+      "pattern": "Fixed cycle READY → Fast Punch → Strong Punch, repeating. Appears solo in the normal pool, and as 2 Punch Constructs in the Punch Off event."
+    },
+    "Sewer Clam": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "56",
+      "a8_hp": "58",
+      "powers": [
+        "Plating 8 (9 at A8)"
+      ],
+      "moves": [
+        "Jet — 10 dmg",
+        "Pressurize — gains 4 Strength"
+      ],
+      "a9_moves": [
+        "Jet — 11 dmg",
+        "Pressurize — gains 4 Strength"
+      ],
+      "pattern": "Always uses Jet first, then alternates Pressurize ↔ Jet every turn. Appears solo."
+    },
+    "Two-Tailed Rat": {
+      "tier": "regular",
+      "act": 1,
+      "hp": "17-21",
+      "a8_hp": "18-22",
+      "moves": [
+        "Scratch — 8 dmg",
+        "Disease Bite — 6 dmg",
+        "Screech — applies 1 Frail",
+        "Call for Backup — summons a new Two-Tailed Rat"
+      ],
+      "a9_moves": [
+        "Scratch — 9 dmg",
+        "Disease Bite — 7 dmg",
+        "Screech — applies 1 Frail",
+        "Call for Backup — summons a new Two-Tailed Rat"
+      ],
+      "pattern": "Encounter starts with 3 rats, each opening on a different move: one Scratch, one Disease Bite, one Screech. After that each rat randomly picks Scratch, Disease Bite or Screech, never using the same move twice in a row. After at least two turns a rat may instead use Call for Backup to summon a new rat; each rat can only summon once and the group can summon up to 3 times total (max 6 rats)."
+    },
+    "Skulking Colony": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "75",
+      "a8_hp": "80",
+      "powers": [
+        "Hardened Shell 20 — it cannot lose more than 20 HP each turn; the cap resets at the start of your turn AND at the start of its turn"
+      ],
+      "moves": [
+        "Zoom — 14 dmg",
+        "Inertia — 9 dmg + gains 2 Strength",
+        "Piercing Stabs — 7 dmg × 2"
+      ],
+      "a9_moves": [
+        "Zoom — 16 dmg",
+        "Inertia — 11 dmg + gains 3 Strength",
+        "Piercing Stabs — 8 dmg × 2"
+      ],
+      "pattern": "Repeating 4-move cycle: Zoom → Zoom → Inertia → Piercing Stabs."
+    },
+    "Phantasmal Gardener": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "26-31",
+      "a8_hp": "27-32",
+      "powers": [
+        "Skittish 6 (7 at A8) — gains that much Block after the first attack played against it resolves"
+      ],
+      "moves": [
+        "Bite — 5 dmg",
+        "Lash — 7 dmg",
+        "Flail — 1 dmg × 3",
+        "Enlarge — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Bite — 5 dmg",
+        "Lash — 7 dmg",
+        "Flail — 1 dmg × 3",
+        "Enlarge — gains 3 Strength"
+      ],
+      "pattern": "Encounter is always 4 Phantasmal Gardeners. All cycle Bite → Lash → Flail → Enlarge in fixed order, each starting at a different point in the cycle."
+    },
+    "Terror Eel": {
+      "tier": "elite",
+      "act": 1,
+      "hp": "140",
+      "a8_hp": "150",
+      "powers": [
+        "Shriek 70 (75 at A8) — when its HP drops to this threshold it becomes Stunned, then uses Terror"
+      ],
+      "moves": [
+        "Crash — 16 dmg",
+        "Thrash — 3 dmg × 3 + gains 6 Vigor",
+        "Stun — Stunned, does nothing",
+        "Terror — applies 99 Vulnerable"
+      ],
+      "a9_moves": [
+        "Crash — 18 dmg",
+        "Thrash — 4 dmg × 3 + gains 6 Vigor",
+        "Stun — Stunned, does nothing",
+        "Terror — applies 99 Vulnerable"
+      ],
+      "pattern": "Alternates Crash ↔ Thrash, starting with Crash. When its HP falls to the Shriek threshold (70, or 75 at A8) it becomes Stunned for a turn, then uses Terror to apply 99 Vulnerable, then resumes the Crash/Thrash alternation."
+    },
+    "Waterfall Giant": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "240",
+      "a8_hp": "250",
+      "powers": [
+        "Steam Eruption — When killed, deals X damage at the end of your next turn."
+      ],
+      "moves": [
+        "Pressurize — gains 15 Steam Eruption",
+        "Stomp — 15 dmg, applies 1 Weak, gains 3 Steam Eruption",
+        "Ram — 10 dmg, gains 3 Steam Eruption",
+        "Siphon — heals 15 HP per player, gains 3 Steam Eruption",
+        "Pressure Gun — 20 dmg (increases by 5 each use), gains 3 Steam Eruption",
+        "Pressure Up — 13 dmg, gains 3 Steam Eruption",
+        "About To Blow — becomes invulnerable, removes its Steam Eruption and prepares to explode",
+        "Explode — dmg equal to its stored Steam Eruption amount, then dies"
+      ],
+      "a9_moves": [
+        "Pressurize — gains 20 Steam Eruption",
+        "Stomp — 16 dmg, applies 1 Weak, gains 3 Steam Eruption",
+        "Ram — 11 dmg, gains 3 Steam Eruption",
+        "Siphon — heals 15 HP per player, gains 3 Steam Eruption",
+        "Pressure Gun — 23 dmg (increases by 5 each use), gains 3 Steam Eruption",
+        "Pressure Up — 14 dmg, gains 3 Steam Eruption",
+        "About To Blow — becomes invulnerable, removes its Steam Eruption and prepares to explode",
+        "Explode — dmg equal to its stored Steam Eruption amount, then dies"
+      ],
+      "pattern": "Uses Pressurize on its first turn, then repeats a fixed cycle: Stomp -> Ram -> Siphon -> Pressure Gun -> Pressure Up -> back to Stomp. Death sequence: when reduced to 0 HP while it has Steam Eruption, it does not die — it becomes invulnerable and uses About To Blow, which removes all of its buffs and debuffs; on the following turn it uses Explode, dealing damage equal to its accumulated Steam Eruption, then dies. If it is killed while it has no Steam Eruption, it dies normally with no explosion. Damage that also applies a debuff can trigger About To Blow's cleanse first, with the debuff applied afterward."
+    },
+    "Soul Fysh": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "211",
+      "a8_hp": "221",
+      "powers": [],
+      "moves": [
+        "Beckon — shuffles 2 Beckon status cards into your deck (1 into draw pile, 1 into discard pile). Beckon costs 1 and is unupgradable: at the end of your turn, if it is in your hand, you lose 6 HP (HP loss, ignores Block), and it then discards itself",
+        "De-Gas — 16 dmg",
+        "Gaze — 7 dmg, shuffles 1 Beckon into your discard pile",
+        "Fade — gains 2 Intangible",
+        "Scream — 13 dmg, applies 3 Vulnerable"
+      ],
+      "a9_moves": [
+        "Beckon — shuffles 2 Beckon status cards into your deck (1 into draw pile, 1 into discard pile). Beckon costs 1 and is unupgradable: at the end of your turn, if it is in your hand, you lose 6 HP (HP loss, ignores Block), and it then discards itself",
+        "De-Gas — 17 dmg",
+        "Gaze — 8 dmg, shuffles 1 Beckon into your discard pile",
+        "Fade — gains 2 Intangible",
+        "Scream — 15 dmg, applies 3 Vulnerable"
+      ],
+      "pattern": "Repeats the same five moves in a fixed order with no variation: Beckon -> De-Gas -> Gaze -> Fade -> Scream, then loops. The first stack of Intangible from Fade expires during the turn transition, so Fade effectively yields only 1 turn of Intangible per cycle rather than 2."
+    },
+    "Lagavulin Matriarch": {
+      "tier": "boss",
+      "act": 1,
+      "hp": "222",
+      "a8_hp": "233",
+      "powers": [
+        "Plating 12 — At the end of your turn, gain X Block. Plating is reduced by 1 at the start of your turn.",
+        "Asleep 3 — Awakens upon losing HP or after X turns."
+      ],
+      "moves": [
+        "Sleep — asleep, does nothing",
+        "Slash — 19 dmg",
+        "Disembowel — 9 dmg × 2",
+        "Slash2 — 12 dmg, gains 12 Block",
+        "Soul Siphon — removes 2 Strength and 2 Dexterity from the player, gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Sleep — asleep, does nothing",
+        "Slash — 21 dmg",
+        "Disembowel — 10 dmg × 2",
+        "Slash2 — 14 dmg, gains 14 Block",
+        "Soul Siphon — removes 2 Strength and 2 Dexterity from the player, gains 2 Strength"
+      ],
+      "pattern": "Starts Asleep with 12 Plating, using Sleep (does nothing) while asleep. It wakes after 3 turns or as soon as it takes unblocked damage, whichever comes first; on waking it loses its Plating. After waking it repeats a fixed cycle with no variation: Slash -> Disembowel -> Slash2 -> Soul Siphon, then loops."
+    }
+  }
+}

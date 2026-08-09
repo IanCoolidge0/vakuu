@@ -13,11 +13,20 @@ _cache: dict | None = None
 
 
 def _load() -> dict:
+    """Load and merge every act's compendium from enemies/*.json.
+
+    Returns {"enemies": {name: entry}, "summons": {summoner: [minions]}}.
+    Enemy names are globally unique across acts, so merging is flat."""
     global _cache
     if _cache is None:
-        path = Path(__file__).parent / "enemies.json"
-        with open(path, "r", encoding="utf-8") as f:
-            _cache = json.load(f)
+        merged_enemies: dict = {}
+        merged_summons: dict = {}
+        for path in sorted((Path(__file__).parent / "enemies").glob("*.json")):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            merged_enemies.update(data.get("enemies", {}))
+            merged_summons.update(data.get("_meta", {}).get("summons", {}))
+        _cache = {"enemies": merged_enemies, "summons": merged_summons}
     return _cache
 
 
@@ -73,20 +82,12 @@ def format_enemies_section(names: list[str], ascension: int = 0) -> str:
     """Format a section for all known enemies in the encounter. Silently
     omits enemies without entries. Returns empty string if no entries match."""
 
-    # Special cases - append minion info for enemies that spawn minions
-
-    ## Overgrowth
-    if "Phrog Parasite" in names:
-        names.append("Wriggler")
-    if "Fogmog" in names:
-        names.append("Eye With Teeth")
-    if "The Kin" in names:
-        names.append("Kin Priest")
-        names.append("Kin Follower")
-
-    ## Underdocks TODO
-    ## Hive TODO
-    ## Glory TODO
+    # Append minion info for enemies that spawn minions, per each act's
+    # _meta.summons mapping.
+    summons = _load().get("summons", {})
+    names = list(names)
+    for name in list(names):
+        names.extend(summons.get(name, []))
 
     blocks = []
     seen = set()
