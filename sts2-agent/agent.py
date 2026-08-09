@@ -50,6 +50,11 @@ class Agent:
         self._last_screen = None
         self._same_screen_count = 0
         self._pending_tool_calls = False
+        # Tool results awaiting delivery: set when _take_action exits at a
+        # transition boundary; sent together with the next screen's prompt
+        # in a single request (see _take_action).
+        self._pending_results: list | None = None
+        self._pending_reason: str | None = None
 
     def run(self):
         """Main loop — play until the run ends or we hit the action limit."""
@@ -113,6 +118,9 @@ class Agent:
             }
             is_related = (self._last_screen, screen) in related_screens or (screen, self._last_screen) in related_screens
             if screen != self._last_screen and not is_related and not self._pending_tool_calls:
+                # Stashed results live inside the history being discarded —
+                # drop them with it (no dangling tool_use once cleared).
+                self._pending_results = None
                 self.llm.clear_history()
                 # Seed with strategic summary so the model has context
                 summary = self._build_summary(state)
@@ -431,7 +439,38 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 return format_state(state) + f"\nUnknown screen type: {screen}. Try to proceed."
 
     def _take_action(self, prompt: str, tools: list[dict], screen: str, state: dict):
-        """Send prompt to LLM, handle tool calls in a loop."""
+        """Send prompt to LLM, handle tool calls in a loop.
+
+        If the previous _take_action exited at a transition boundary, its
+        stashed tool results ride along with this screen's prompt in one
+        request — same round-trip count as in-loop piggybacking, but control
+        returns to the main loop at every transition."""
+        if self._pending_results is not None:
+            pending = self._pending_results
+            reason = self._pending_reason
+            self._pending_results = None
+            self._pending_reason = None
+            if reason == "turn_ended":
+                preamble = ("Your turn ended and the enemies have acted. "
+                            "Here is the new turn:\n\n")
+            else:
+                preamble = (f"The game transitioned to a new screen ({screen}). "
+                            "Act on the new screen using its tools:\n\n")
+            full_prompt = preamble + prompt
+            if self.logger:
+                self.logger.prompt(full_prompt)
+            try:
+                text, tool_calls = self.llm.send_tool_results(
+                    pending, tools, extra_text=full_prompt)
+            except Exception as e:
+                print(f"{RED}LLM error: {e}{RESET}")
+                print(f"{YELLOW}Clearing conversation history to recover...{RESET}")
+                if self.logger:
+                    self.logger.error(f"LLM error (send pending): {e}")
+                self.llm.clear_history()
+                return
+            return self._run_tool_loop(text, tool_calls, tools, screen, state)
+
         if self.logger:
             self.logger.prompt(prompt)
         try:
@@ -443,7 +482,13 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 self.logger.error(f"LLM error (send): {e}")
             self.llm.clear_history()
             return
+        return self._run_tool_loop(text, tool_calls, tools, screen, state)
 
+    def _run_tool_loop(self, text, tool_calls, tools: list[dict],
+                       screen: str, state: dict):
+        """Execute tool calls until the model stops, a transition boundary is
+        reached (results get stashed for the next _take_action), or the
+        runaway backstop trips."""
         if text:
             print(f"{MAGENTA}{text}{RESET}")
             if self.tts:
@@ -456,11 +501,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         if self.tts:
             self.tts.wait()
 
-        # Handle tool call loop. The cap is a runaway backstop, not a turn
-        # limit — piggybacked screen changes legitimately chain many rounds
-        # through one _take_action (event → map → combat → a whole turn), and
-        # expiring mid-combat silently cancels a valid action, forcing a
-        # mid-turn re-prompt.
+        # With boundary exits, one loop spans at most a single turn or one
+        # screen's worth of actions — the cap is purely a runaway backstop.
         max_tool_rounds = 30
         self._pending_tool_calls = False
         for _ in range(max_tool_rounds):
@@ -474,7 +516,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             results = []
             screen_changed = False
             turn_ended = False
-            new_screen_state: dict | None = None  # set if screen changed
             for tool_call in tool_calls:
                 name = tool_call['name']
                 inp = tool_call['input']
@@ -519,7 +560,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                             self.logger.tool_call(name, inp)
                             self.logger.tool_result(name, result)
                         screen_changed = True
-                        new_screen_state = live_state
                         results.append({"tool_use_id": tool_call['id'], "content": result})
                         continue
 
@@ -557,12 +597,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     if check is not None:
                         screen_changed = True
                         turn_ended = check.get("screen") == "combat"
-                        new_screen_state = check
                 elif success and name in ("play_card", "use_potion", "select_hand_card"):
                     check = self._settle_state(timeout=5.0)
                     if check is not None and check.get("screen") != screen:
                         screen_changed = True
-                        new_screen_state = check
                 elif success and name in ("choose_map_node", "choose_rest_option",
                                           "claim_reward", "proceed", "skip_rewards",
                                           "confirm_selection"):
@@ -573,7 +611,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                         state, timeout=settle_timeout)
                     if settled is not None:
                         screen_changed = True
-                        new_screen_state = settled
                     elif observed:
                         # Same-screen effect landed (heal, claim, event
                         # closing). Refresh the baseline so the next settled
@@ -622,38 +659,20 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
 
                 results.append({"tool_use_id": tool_call['id'], "content": result})
 
-            # If an action changed the screen (e.g. play Survivor →
-            # hand_select) or ended the turn, piggy-back the new state's
-            # prompt + tools onto the tool_result in the same round-trip.
-            # This lets the LLM plan once with full context instead of
-            # pre-emptively guessing on state it has never seen.
-            extra_text = None
-            next_tools = tools
-            if screen_changed and new_screen_state is not None:
-                new_screen = new_screen_state.get("screen")
-                next_tools = get_tools_for_screen(new_screen)
-                try:
-                    new_prompt = self._build_prompt(new_screen, new_screen_state)
-                    if turn_ended:
-                        extra_text = (
-                            "Your turn ended and the enemies have acted. "
-                            f"Here is the new turn:\n\n{new_prompt}"
-                        )
-                    else:
-                        extra_text = (
-                            f"The game transitioned to a new screen ({new_screen}). "
-                            f"Act on the new screen using its tools:\n\n{new_prompt}"
-                        )
-                    if self.logger:
-                        self.logger.prompt(extra_text)
-                except Exception:
-                    extra_text = None
+            # Transition boundary: stash the results and hand control back
+            # to the main loop, which delivers them together with the new
+            # screen's prompt in a single request. Same round-trip count as
+            # in-loop piggybacking, but the loop exits at every transition,
+            # so history clearing and screen tracking keep working.
+            if screen_changed:
+                self._pending_results = results
+                self._pending_reason = "turn_ended" if turn_ended else "screen_changed"
+                self._pending_tool_calls = False
+                return
 
             # Always send all results back - never leave dangling tool_use blocks
             try:
-                text, tool_calls = self.llm.send_tool_results(
-                    results, next_tools, extra_text=extra_text
-                )
+                text, tool_calls = self.llm.send_tool_results(results, tools)
                 self._pending_tool_calls = bool(tool_calls)
             except Exception as e:
                 print(f"{RED}LLM error on tool result: {e}{RESET}")
@@ -675,22 +694,6 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             # Wait for narration before the next round of tool calls fires.
             if self.tts:
                 self.tts.wait()
-
-            # After a screen change, update the loop's view of the current
-            # screen/tools so any further iterations operate on the new
-            # screen. Reset screen_changed so additional transitions inside
-            # this loop are detected correctly.
-            if screen_changed and new_screen_state is not None:
-                screen = new_screen_state.get("screen")
-                tools = next_tools
-                state = new_screen_state
-                # Keep the main loop's screen tracking in sync — otherwise
-                # its next iteration sees a "screen change" the piggyback
-                # already handled and wipes the conversation mid-combat.
-                self._last_screen = screen
-                screen_changed = False
-                turn_ended = False
-                new_screen_state = None
 
         # If the loop exited with pending tool_use blocks (max rounds,
         # screen change, etc.), send cancellation results to close them
