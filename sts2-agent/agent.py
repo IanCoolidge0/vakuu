@@ -456,8 +456,12 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         if self.tts:
             self.tts.wait()
 
-        # Handle tool call loop
-        max_tool_rounds = 5
+        # Handle tool call loop. The cap is a runaway backstop, not a turn
+        # limit — piggybacked screen changes legitimately chain many rounds
+        # through one _take_action (event → map → combat → a whole turn), and
+        # expiring mid-combat silently cancels a valid action, forcing a
+        # mid-turn re-prompt.
+        max_tool_rounds = 30
         self._pending_tool_calls = False
         for _ in range(max_tool_rounds):
             if not tool_calls:
@@ -680,6 +684,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 screen = new_screen_state.get("screen")
                 tools = next_tools
                 state = new_screen_state
+                # Keep the main loop's screen tracking in sync — otherwise
+                # its next iteration sees a "screen change" the piggyback
+                # already handled and wipes the conversation mid-combat.
+                self._last_screen = screen
                 screen_changed = False
                 turn_ended = False
                 new_screen_state = None
@@ -692,6 +700,12 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         # the cancellation, leaving a new dangling tool_use that will
         # brick the next turn and force a catastrophic history clear.
         if tool_calls:
+            cancelled_names = ", ".join(tc['name'] for tc in tool_calls)
+            print(f"{YELLOW}Tool round cap reached — cancelling: {cancelled_names}{RESET}")
+            if self.logger:
+                self.logger.error(
+                    f"Tool round cap ({max_tool_rounds}) reached — "
+                    f"cancelled pending call(s): {cancelled_names}")
             dummy_results = [
                 {"tool_use_id": tc['id'],
                  "content": json.dumps({"error": "Action cancelled — the harness "
@@ -699,7 +713,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 for tc in tool_calls
             ]
             try:
-                _, leftover = self.llm.send_tool_results(dummy_results, [])
+                text, leftover = self.llm.send_tool_results(dummy_results, [])
+                if self.logger:
+                    self.logger.llm_text(text)
+                    self.logger.usage(getattr(self.llm, "last_usage", None))
                 if leftover:
                     # Shouldn't happen with tools=[] but defend against it.
                     self.llm.clear_history()
