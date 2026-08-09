@@ -40,7 +40,7 @@
         "Glomp — 9 dmg",
         "Goop — applies 2 Frail"
       ],
-      "pattern": "Fixed cycle Whip Slap → Glomp → Goop; each Corpse Slug starts on a different move in the cycle. Appears as 2 Corpse Slugs (weak encounter) or 3 (normal encounter)."
+      "pattern": "Fixed cycle Whip Slap → Glomp → Goop; each Corpse Slug starts on a different move in the cycle."
     },
     "Seapunk": {
       "tier": "regular",
@@ -57,7 +57,7 @@
         "Spinning Kick — 2 dmg × 4",
         "Bubble Burp — gains 8 Block and 2 Strength"
       ],
-      "pattern": "Fixed cycle Sea Kick → Spinning Kick → Bubble Burp, repeating. Appears solo (weak encounter) or paired with a Calcified Cultist (normal encounter)."
+      "pattern": "Fixed cycle Sea Kick → Spinning Kick → Bubble Burp, repeating."
     },
     "Sludge Spinner": {
       "tier": "regular",
@@ -74,7 +74,7 @@
         "Slam — 12 dmg",
         "Rage — 7 dmg + gains 3 Strength"
       ],
-      "pattern": "Always uses Oil Spray first. After that, randomly uses one of its three moves each turn, and cannot use the same move twice in a row. Appears solo in the weak encounter."
+      "pattern": "Always uses Oil Spray first. After that, randomly uses one of its three moves each turn, and cannot use the same move twice in a row."
     },
     "Toadpole": {
       "tier": "regular",
@@ -107,7 +107,7 @@
         "Incantation — gains 2 Ritual",
         "Dark Strike — 11 dmg"
       ],
-      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 2 Strength at end of turn, but it does not gain Strength on the turn it uses Incantation. Appears paired with a Damp Cultist, or paired with a Seapunk."
+      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 2 Strength at end of turn, but it does not gain Strength on the turn it uses Incantation."
     },
     "Damp Cultist": {
       "tier": "regular",
@@ -123,7 +123,7 @@
         "Incantation — gains 6 Ritual",
         "Dark Strike — 3 dmg"
       ],
-      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 5 Strength (6 at A9) at end of turn and does not trigger on the Incantation turn. Appears paired with a Calcified Cultist."
+      "pattern": "Always uses Incantation first, then Dark Strike every turn after. Ritual grants 5 Strength (6 at A9) at end of turn and does not trigger on the Incantation turn."
     },
     "Living Fog": {
       "tier": "regular",
@@ -177,7 +177,7 @@
         "Tackle — 11 dmg + applies 1 Frail",
         "Lash — 4 dmg × 2"
       ],
-      "pattern": "Always opens with Latch. Every turn after, picks randomly with equal probability (1/3 each) among Latch, Tackle and Lash, with no restriction on repeating the same move. Suck triggers per unblocked hit. Appears solo."
+      "pattern": "Always opens with Latch. Every turn after, picks randomly with equal probability (1/3 each) among Latch, Tackle and Lash, with no restriction on repeating the same move. Suck triggers per unblocked hit."
     },
     "Gremlin Merc": {
       "tier": "regular",
@@ -243,7 +243,7 @@
         "Swipe — 14 dmg",
         "Stomp — 5 dmg × 3"
       ],
-      "pattern": "Always uses Haunt first. From the second turn onward, alternates Swipe ↔ Stomp, always starting with Swipe. Haunt is used only on turn 1. Appears solo."
+      "pattern": "Always uses Haunt first. From the second turn onward, alternates Swipe ↔ Stomp, always starting with Swipe. Haunt is used only on turn 1."
     },
     "Punch Construct": {
       "tier": "regular",
@@ -263,7 +263,7 @@
         "Fast Punch — 6 dmg × 2 + applies 1 Frail",
         "Strong Punch — 16 dmg"
       ],
-      "pattern": "Fixed cycle READY → Fast Punch → Strong Punch, repeating. Appears solo in the normal pool, and as 2 Punch Constructs in the Punch Off event."
+      "pattern": "Fixed cycle READY → Fast Punch → Strong Punch, repeating."
     },
     "Sewer Clam": {
       "tier": "regular",
@@ -281,7 +281,7 @@
         "Jet — 11 dmg",
         "Pressurize — gains 4 Strength"
       ],
-      "pattern": "Always uses Jet first, then alternates Pressurize ↔ Jet every turn. Appears solo."
+      "pattern": "Always uses Jet first, then alternates Pressurize ↔ Jet every turn."
     },
     "Two-Tailed Rat": {
       "tier": "regular",
@@ -300,7 +300,7 @@
         "Screech — applies 1 Frail",
         "Call for Backup — summons a new Two-Tailed Rat"
       ],
-      "pattern": "Encounter starts with 3 rats, each opening on a different move: one Scratch, one Disease Bite, one Screech. After that each rat randomly picks Scratch, Disease Bite or Screech, never using the same move twice in a row. After at least two turns a rat may instead use Call for Backup to summon a new rat; each rat can only summon once and the group can summon up to 3 times total (max 6 rats)."
+      "pattern": "Each rat opens on a different move: one Scratch, one Disease Bite, one Screech. After that each rat randomly picks Scratch, Disease Bite or Screech, never using the same move twice in a row. After at least two turns a rat may instead use Call for Backup to summon a new rat; each rat can only summon once and the group can summon up to 3 times total (max 6 rats)."
     },
     "Skulking Colony": {
       "tier": "elite",
@@ -342,7 +342,7 @@
         "Flail — 1 dmg × 3",
         "Enlarge — gains 3 Strength"
       ],
-      "pattern": "Encounter is always 4 Phantasmal Gardeners. All cycle Bite → Lash → Flail → Enlarge in fixed order, each starting at a different point in the cycle."
+      "pattern": "All Gardeners cycle Bite → Lash → Flail → Enlarge in fixed order, each starting at a different point in the cycle."
     },
     "Terror Eel": {
       "tier": "elite",

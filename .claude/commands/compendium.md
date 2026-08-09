@@ -74,12 +74,17 @@ combat prompts — accuracy matters, fabrication is unacceptable.
 
 **`pattern` and every other field contain LOAD-BEARING FIGHT INFORMATION
 ONLY.** Move order, cycles, probabilities, never-repeat rules, opener offsets,
-phase/stun thresholds, encounter compositions, death sequences, non-obvious
-mechanic timing. NO coaching, NO strategy advice, NO consequences-for-the-
-player framing: nothing shaped like "so you should…", "…is what punishes
-you", "kill this first", "X is wasted", "plays around", "better than". Do not
-restate a `powers` entry or a `moves` effect inside `pattern`. State
-mechanics; the agent being benchmarked must derive the tactics itself.
+phase/stun thresholds, death sequences, non-obvious mechanic timing. NO
+coaching, NO strategy advice, NO consequences-for-the-player framing: nothing
+shaped like "so you should…", "…is what punishes you", "kill this first",
+"X is wasted", "plays around", "better than". Do not restate a `powers` entry
+or a `moves` effect inside `pattern`. NO encounter-composition statements
+("Appears solo", "paired with X", "Encounter is always N") — the benchmarked
+agent always sees the actual enemy roster in its combat prompt, so these are
+redundant; reference composition ONLY when it conditions behavior, phrased
+conditionally ("when 2 appear together, the front one opens with X"; "one
+opens with X and the other with Y"). State mechanics; the agent being
+benchmarked must derive the tactics itself.
 
 **Rules:** every number must come from the fetched sources — omit fields the
 sources don't document rather than inventing values, recording each gap in

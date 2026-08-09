@@ -13,13 +13,21 @@ _ICON_RE = re.compile(r"res://\S+?\.(?:png|svg|webp|jpe?g)")
 _MARKUP_RE = re.compile(r"[{}|]")
 
 
-def clean_desc(text) -> str:
-    """Sanitize a card/relic/option description for the LLM prompt."""
+def clean_desc(text, keep_newlines: bool = False) -> str:
+    """Sanitize a card/relic/option description for the LLM prompt.
+
+    Descriptions are joined to a single line by default: the prompt format is
+    line-oriented, and a wrapped description continuing at column 0 can be
+    misread as a new list item. keep_newlines=True is for prose blocks
+    (event bodies) where line breaks aren't ambiguous."""
     if not text:
         return ""
     text = _ENERGY_ICON_RE.sub("[E]", text)  # each icon = 1 energy
     text = _ICON_RE.sub("", text)            # any other inline icon
     text = _MARKUP_RE.sub("", text)          # template remnants like ')|}'
+    if not keep_newlines:
+        parts = (p.strip() for p in text.splitlines())
+        text = " ".join(p for p in parts if p)
     return text.strip()
 
 
@@ -113,7 +121,7 @@ def format_event(state: dict) -> str:
     event = state['event']
     lines.append(f"\nEvent: {event['name']}")
     if event['body']:
-        lines.append(f"\n{clean_desc(event['body'])}")
+        lines.append(f"\n{clean_desc(event['body'], keep_newlines=True)}")
     lines.append("\nOptions:")
     for o in event['options']:
         locked = " [LOCKED]" if o['is_locked'] else ""

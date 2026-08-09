@@ -1,0 +1,554 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Hive",
+    "note": "Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). Prefixed move lists are FULL replacement lists, not diffs. In the Hive, HP scales at A8; attack damage, hit counts and Strength gains scale at A9. Block is mixed and must be read per-enemy: Tunneler (Burrow), Louse Progenitor (Curl Up / Curl and Grow), Slumbering Beetle (Plating) and Infested Prism (Pulsate) scale Block at A8 — these enemies therefore carry BOTH a8_moves and a9_moves, and their a9_moves lists already include the A8 Block value. Bowlbug (Egg)'s Bite Block, The Obscura's Hardening Strike Block and Infested Prism's Radiate Block scale at A9 instead. Crusher's Guarded Strike Block (18) and Enlarging Strike (4 dmg) have no ascension scaling at all. All numbers are taken from Module:Enemies/StS2_data/Hive, Module:Enemies/StS2_data/Elites and Module:Enemies/StS2_data/Bosses; where a rendered page disagreed with a module on the ascension level, the module was used.",
+    "summons": {
+      "Ovicopter": [
+        "Tough Egg"
+      ],
+      "Tough Egg": [
+        "Hatchling"
+      ],
+      "The Obscura": [
+        "Parafright"
+      ]
+    },
+    "missing": [
+      "Rendered enemy pages repeatedly label damage increases as Ascension 8 (Bowlbugs, Exoskeleton, Chomper, Louse Progenitor, Ovicopter, Myte, Slumbering Beetle). The data modules use {{Asc|9|VALUE|2}} for those same values. The modules were followed throughout; damage is recorded as a9_moves.",
+      "Imbalanced power — not defined in Module:Powers/StS2_data/Enemy. Effect text taken from Slay_the_Spire_2:Bowlbugs.",
+      "Tainted keyword — not defined in Module:Powers/StS2_data/Common, /Debuff, /Enemy or Module:Keywords/StS2_data/Common. Text 'Take X additional damage from Attacks this turn' taken from Slay_the_Spire_2:Infested_Prism.",
+      "Slay_the_Spire_2:Bowlbug is a 404; the group page Slay_the_Spire_2:Bowlbugs was used for all four Bowlbug variants.",
+      "Hatchling — no data-module entry and no standalone page. HP taken from Tough Egg's Hatch intent in Module:Enemies/StS2_data/Hive; moves and behaviour from Slay_the_Spire_2:Ovicopter.",
+      "Tough Egg — module StartsWith is '{{BD2|Hatch}}' with no counter value. The 2-turn / 1-turn hatch timing comes from Slay_the_Spire_2:Ovicopter.",
+      "Parafright — module defines BaseHP 21 but no AscHP field, so no a8_hp is recorded.",
+      "Exoskeleton — the page's own follow-up rule is self-contradictory: 'After Skitter, the next move is randomly Skitter or Mandibles (cannot repeat the same move twice in a row).' Recorded verbatim; a human should confirm whether Skitter can in fact repeat.",
+      "Ovicopter — no cap documented for repeat Lay Eggs summons.",
+      "The Obscura — module lists Illusion as a normal intent, but Slay_the_Spire_2:The_Obscura states it is used only on turn 1 and documents no cap or re-summon rule. Page text used.",
+      "Decimillipede — segment count (3) comes from Slay_the_Spire_2:Decimillipede; the module documents no encounter composition.",
+      "Knowledge Demon — the three Curse of Knowledge option pairs come from Slay_the_Spire_2:Knowledge_Demon; the module only states 'The options change each time this move is used.'",
+      "Crusher — 'Enlarging Strike' is literally 'Deals 4 damage.' in the module with no growth or scaling clause, despite the name. Worth double-checking in game.",
+      "Kaiser Crab — neither the module nor the page documents what happens when one body dies (beyond the Crab Rage power) or how the fight ends.",
+      "The Insatiable — no source documents what happens when Sandpit reaches 0 beyond the power text 'In X turns, you will be eaten and die.'",
+      "Mysterious Knight is defined in Module:Enemies/StS2_data/Hive but is not in any Hive encounter pool; Slay_the_Spire_2:Mysterious_Knight places it in the Act 2 event 'The Lantern Key'."
+    ]
+  },
+  "enemies": {
+    "Bowlbug (Rock)": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "45-48",
+      "a8_hp": "46-49",
+      "powers": [
+        "Imbalanced — becomes Stunned when its attack is fully blocked; this requires at least 1 Block and all of the damage prevented"
+      ],
+      "moves": [
+        "Headbutt — 15 dmg",
+        "Dizzy — Stunned, does nothing"
+      ],
+      "a9_moves": [
+        "Headbutt — 16 dmg",
+        "Dizzy — Stunned, does nothing"
+      ],
+      "pattern": "Uses Headbutt every turn. If Headbutt's damage is fully prevented it becomes Stunned and uses Dizzy on its next turn, then resumes Headbutt; any source of damage prevention counts."
+    },
+    "Bowlbug (Egg)": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "21-22",
+      "a8_hp": "23-24",
+      "moves": [
+        "Bite — 7 dmg + gains 7 Block"
+      ],
+      "a9_moves": [
+        "Bite — 8 dmg + gains 8 Block"
+      ],
+      "pattern": "Uses Bite every turn."
+    },
+    "Bowlbug (Silk)": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "40-43",
+      "a8_hp": "41-44",
+      "moves": [
+        "Thrash — 4 dmg × 2",
+        "Spin Web — applies 1 Weak"
+      ],
+      "a9_moves": [
+        "Thrash — 5 dmg × 2",
+        "Spin Web — applies 1 Weak"
+      ],
+      "pattern": "Alternates Spin Web ↔ Thrash."
+    },
+    "Bowlbug (Nectar)": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "35-38",
+      "a8_hp": "36-39",
+      "moves": [
+        "Thrash — 3 dmg",
+        "Buff — gains 15 Strength"
+      ],
+      "a9_moves": [
+        "Thrash — 3 dmg",
+        "Buff — gains 16 Strength"
+      ],
+      "pattern": "Opens with Thrash, then uses Buff once, then uses Thrash every turn after."
+    },
+    "Exoskeleton": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "24-28",
+      "a8_hp": "25-29",
+      "powers": [
+        "Hard to Kill 9 — reduces all damage taken and HP lost by it to 9"
+      ],
+      "moves": [
+        "Skitter — 1 dmg × 3",
+        "Mandibles — 8 dmg",
+        "Enrage — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Skitter — 1 dmg × 4",
+        "Mandibles — 9 dmg",
+        "Enrage — gains 2 Strength"
+      ],
+      "pattern": "Openers are fixed by position: the first uses Skitter, the second Mandibles, the third Enrage, and the fourth (if present) randomly picks Skitter or Mandibles. After that: after Skitter the next move is randomly Skitter or Mandibles (it cannot repeat the same move twice in a row); after Mandibles it always uses Enrage; after Enrage the next move is randomly Skitter or Mandibles."
+    },
+    "Thieving Hopper": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "79",
+      "a8_hp": "84",
+      "powers": [
+        "Escape Artist 5 — tries to escape the combat after 5 turns"
+      ],
+      "moves": [
+        "Thievery — 17 dmg + steals a card from your deck",
+        "Flutter — gains Flutter (receives 50% less damage from Attacks; must be dealt attack damage 5 times to Stun it)",
+        "Hat Trick — 21 dmg",
+        "Nab — 14 dmg",
+        "Escape — flees the combat, taking any stolen cards with it"
+      ],
+      "a9_moves": [
+        "Thievery — 19 dmg + steals a card from your deck",
+        "Flutter — gains Flutter (receives 50% less damage from Attacks; must be dealt attack damage 5 times to Stun it)",
+        "Hat Trick — 23 dmg",
+        "Nab — 16 dmg",
+        "Escape — flees the combat, taking any stolen cards with it"
+      ],
+      "pattern": "Fixed sequence Thievery → Flutter → Hat Trick → Nab → Escape. Cards stolen are lost permanently if it escapes and are returned if it is killed first. Steal priority: Uncommon cards first, then Rare/Common/Event, then Basic/Quest, then Ancient or Imbued, then Curses; Token and Status cards cannot be stolen."
+    },
+    "Tunneler": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "87",
+      "a8_hp": "92",
+      "moves": [
+        "Bite — 13 dmg",
+        "Burrow — gains Burrowed and 32 Block (Burrowed: its Block is not removed at the start of its turn; it is Stunned if all of its Block is removed)",
+        "Attack from Below — 23 dmg",
+        "Emerging Strike — Stunned, does nothing"
+      ],
+      "a8_moves": [
+        "Bite — 13 dmg",
+        "Burrow — gains Burrowed and 37 Block (Burrowed: its Block is not removed at the start of its turn; it is Stunned if all of its Block is removed)",
+        "Attack from Below — 23 dmg",
+        "Emerging Strike — Stunned, does nothing"
+      ],
+      "a9_moves": [
+        "Bite — 15 dmg",
+        "Burrow — gains Burrowed and 37 Block (Burrowed: its Block is not removed at the start of its turn; it is Stunned if all of its Block is removed)",
+        "Attack from Below — 26 dmg",
+        "Emerging Strike — Stunned, does nothing"
+      ],
+      "pattern": "Opens with Bite, then uses Burrow. While Burrowed it uses Attack from Below every turn. If its Block is fully removed while burrowed it uses Emerging Strike, then starts the cycle over with Bite."
+    },
+    "Chomper": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "60-64",
+      "a8_hp": "63-67",
+      "powers": [
+        "Artifact 2 — negates the next 2 debuffs applied to it"
+      ],
+      "moves": [
+        "Clamp — 8 dmg × 2",
+        "Screech — shuffles 3 Dazed into your discard pile"
+      ],
+      "a9_moves": [
+        "Clamp — 9 dmg × 2",
+        "Screech — shuffles 3 Dazed into your discard pile"
+      ],
+      "pattern": "One Chomper opens with Clamp and the other with Screech; after that each alternates Clamp ↔ Screech every turn."
+    },
+    "Hunter Killer": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "121",
+      "a8_hp": "126",
+      "moves": [
+        "Tenderizing Goop — applies 1 Tender (whenever you play a card, lose 1 Strength and 1 Dexterity this turn)",
+        "Bite — 17 dmg",
+        "Puncture — 7 dmg × 3"
+      ],
+      "a9_moves": [
+        "Tenderizing Goop — applies 1 Tender (whenever you play a card, lose 1 Strength and 1 Dexterity this turn)",
+        "Bite — 19 dmg",
+        "Puncture — 8 dmg × 3"
+      ],
+      "pattern": "Opens with Tenderizing Goop. Every turn after it picks randomly between Bite and Puncture with Puncture twice as likely, and Bite cannot be used twice in a row. Tender's Strength/Dexterity loss is applied after the played card's effects resolve, so a card's displayed damage is accurate at the moment it is played; when a card triggers other card plays, the loss is not applied until all triggered cards have finished resolving."
+    },
+    "Louse Progenitor": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "134-136",
+      "a8_hp": "138-141",
+      "powers": [
+        "Curl Up 14 (18 at A8) — gains that much Block upon first being hit"
+      ],
+      "moves": [
+        "Web Cannon — 9 dmg + applies 2 Frail",
+        "Curl and Grow — gains 14 Block and 5 Strength",
+        "Pounce — 14 dmg"
+      ],
+      "a8_moves": [
+        "Web Cannon — 9 dmg + applies 2 Frail",
+        "Curl and Grow — gains 18 Block and 5 Strength",
+        "Pounce — 14 dmg"
+      ],
+      "a9_moves": [
+        "Web Cannon — 10 dmg + applies 2 Frail",
+        "Curl and Grow — gains 18 Block and 5 Strength",
+        "Pounce — 16 dmg"
+      ],
+      "pattern": "Fixed cycle Web Cannon → Curl and Grow → Pounce, repeating."
+    },
+    "Myte": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "61-67",
+      "a8_hp": "64-69",
+      "moves": [
+        "Toxic Cornucopia — adds 2 Toxic to your hand (Toxic is a 1-cost Status card: at the end of your turn, if it is in your hand, take 5 damage, then Exhaust)",
+        "Bite — 13 dmg",
+        "Suck — 4 dmg + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Toxic Cornucopia — adds 2 Toxic to your hand (Toxic is a 1-cost Status card: at the end of your turn, if it is in your hand, take 5 damage, then Exhaust)",
+        "Bite — 15 dmg",
+        "Suck — 6 dmg + gains 3 Strength"
+      ],
+      "pattern": "One Myte opens with Toxic Cornucopia and the other with Suck; both then follow the repeating cycle Toxic Cornucopia → Bite → Suck."
+    },
+    "Ovicopter": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "124-130",
+      "a8_hp": "126-132",
+      "moves": [
+        "Lay Eggs — summons 3 Tough Eggs",
+        "Smash — 16 dmg",
+        "Tenderizer — 7 dmg + applies 2 Vulnerable",
+        "Nutritional Paste — gains 3 Strength"
+      ],
+      "a9_moves": [
+        "Lay Eggs — summons 3 Tough Eggs",
+        "Smash — 17 dmg",
+        "Tenderizer — 8 dmg + applies 2 Vulnerable",
+        "Nutritional Paste — gains 4 Strength"
+      ],
+      "pattern": "Always opens with Lay Eggs, then Smash, then Tenderizer. After Tenderizer it checks its ally count: with 3 or fewer allies it uses Lay Eggs again, otherwise Nutritional Paste. It then resumes Smash → Tenderizer and repeats the check."
+    },
+    "Tough Egg": {
+      "tier": "minion",
+      "act": 2,
+      "summoned_by": "Ovicopter (3 per Lay Eggs)",
+      "hp": "14-18",
+      "a8_hp": "15-19",
+      "powers": [
+        "Hatch — hatches after a set number of turns",
+        "Minion — minions abandon combat without their leader"
+      ],
+      "moves": [
+        "Hatch — becomes a Hatchling with 19-22 HP, removing all of its powers except Minion",
+        "Nibble — 4 dmg"
+      ],
+      "a8_moves": [
+        "Hatch — becomes a Hatchling with 20-23 HP, removing all of its powers except Minion",
+        "Nibble — 4 dmg"
+      ],
+      "a9_moves": [
+        "Hatch — becomes a Hatchling with 20-23 HP, removing all of its powers except Minion",
+        "Nibble — 5 dmg"
+      ],
+      "pattern": "Does nothing while its Hatch counter runs down. The counter starts at 2 if the egg was summoned during the enemy's turn, or 1 if it was summoned during the player's turn. It then uses Hatch to become a Hatchling and uses Nibble every turn after."
+    },
+    "Hatchling": {
+      "tier": "minion",
+      "act": 2,
+      "summoned_by": "Tough Egg (transforms via Hatch)",
+      "hp": "19-22",
+      "a8_hp": "20-23",
+      "powers": [
+        "Minion — minions abandon combat without their leader"
+      ],
+      "moves": [
+        "Nibble — 4 dmg"
+      ],
+      "a9_moves": [
+        "Nibble — 5 dmg"
+      ],
+      "pattern": "Uses Nibble every turn. Enters play at full HP when a Tough Egg hatches, carrying over none of the egg's powers except Minion."
+    },
+    "Slumbering Beetle": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "86",
+      "a8_hp": "89",
+      "powers": [
+        "Plating 15 (18 at A8) — at the end of your turn it gains that much Block; Plating is reduced by 1 at the start of your turn",
+        "Slumber 3 — awakens upon taking turns or losing HP 3 times"
+      ],
+      "moves": [
+        "Snore — asleep, does nothing",
+        "Roll Out — 16 dmg + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Snore — asleep, does nothing",
+        "Roll Out — 18 dmg + gains 2 Strength"
+      ],
+      "pattern": "Starts asleep and uses Snore while Slumber lasts. Slumber counts down on turns it takes and on times it loses HP; when it expires the beetle wakes, loses its Plating entirely, and uses Roll Out every turn after."
+    },
+    "Spiny Toad": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "116-119",
+      "a8_hp": "121-124",
+      "moves": [
+        "Protruding Spikes — gains 5 Thorns",
+        "Spike Explosion — 23 dmg, loses 5 Thorns",
+        "Tongue Lash — 17 dmg"
+      ],
+      "a9_moves": [
+        "Protruding Spikes — gains 5 Thorns",
+        "Spike Explosion — 25 dmg, loses 5 Thorns",
+        "Tongue Lash — 19 dmg"
+      ],
+      "pattern": "Fixed cycle Protruding Spikes → Spike Explosion → Tongue Lash, repeating."
+    },
+    "The Obscura": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "123",
+      "a8_hp": "129",
+      "moves": [
+        "Illusion — summons a Parafright",
+        "Piercing Gaze — 10 dmg",
+        "Wail — all enemies gain 3 Strength",
+        "Hardening Strike — 6 dmg + gains 6 Block"
+      ],
+      "a9_moves": [
+        "Illusion — summons a Parafright",
+        "Piercing Gaze — 11 dmg",
+        "Wail — all enemies gain 3 Strength",
+        "Hardening Strike — 7 dmg + gains 7 Block"
+      ],
+      "pattern": "Always opens with Illusion on turn 1 to summon a Parafright. After that it randomly picks one of Piercing Gaze, Wail or Hardening Strike, and cannot use the same move twice in a row."
+    },
+    "Parafright": {
+      "tier": "minion",
+      "act": 2,
+      "summoned_by": "The Obscura (1, via Illusion on turn 1)",
+      "hp": "21",
+      "powers": [
+        "Illusion — when this dies, it revives next turn at full HP"
+      ],
+      "moves": [
+        "Slam — 16 dmg"
+      ],
+      "a9_moves": [
+        "Slam — 17 dmg"
+      ],
+      "pattern": "Uses Slam every turn."
+    },
+    "Mysterious Knight": {
+      "tier": "regular",
+      "act": 2,
+      "hp": "101",
+      "a8_hp": "108",
+      "powers": [
+        "Strength 6",
+        "Plating 6 — at the end of your turn it gains 6 Block; Plating is reduced by 1 at the start of your turn"
+      ],
+      "moves": [
+        "Breaker — gains 3 Strength",
+        "Flail — 9 dmg × 2",
+        "Ram — 15 dmg"
+      ],
+      "a9_moves": [
+        "Breaker — gains 3 Strength",
+        "Flail — 10 dmg × 2",
+        "Ram — 17 dmg"
+      ],
+      "pattern": "Opens with Ram. Every turn after it picks randomly with Breaker at single weight and Flail and Ram at double weight each, and cannot use the same move twice in a row. Does not appear in the Hive encounter pools — it is fought in the Act 2 event 'The Lantern Key'."
+    },
+    "Decimillipede": {
+      "tier": "elite",
+      "act": 2,
+      "hp": "40-46",
+      "a8_hp": "46-52",
+      "powers": [
+        "Reattach 25 — if other segments are still alive, revives in 2 turns with 25 HP"
+      ],
+      "moves": [
+        "Bulk — 6 dmg + gains 2 Strength",
+        "Writhe — 5 dmg × 2",
+        "Outgas — 8 dmg + applies 1 Weak",
+        "Reattach — revives with 25 HP if other segments are alive"
+      ],
+      "a9_moves": [
+        "Bulk — 7 dmg + gains 2 Strength",
+        "Writhe — 6 dmg × 2",
+        "Outgas — 9 dmg + applies 1 Weak",
+        "Reattach — revives with 25 HP if other segments are alive"
+      ],
+      "pattern": "Each segment cycles Bulk → Writhe → Outgas in fixed order and starts at a different point in the cycle, running independently of the others. A killed segment revives 2 turns later with 25 HP so long as at least one other segment is still alive."
+    },
+    "Entomancer": {
+      "tier": "elite",
+      "act": 2,
+      "hp": "145",
+      "a8_hp": "155",
+      "powers": [
+        "Personal Hive 1 — whenever this enemy is hit by an Attack, add that many Dazed into your draw pile"
+      ],
+      "moves": [
+        "Beeeees! — 3 dmg × 7",
+        "Spear! — 18 dmg",
+        "Pheromone Spit — gains 1 Personal Hive and 1 Strength; if Personal Hive is already at 3, gains 2 Strength instead"
+      ],
+      "a9_moves": [
+        "Beeeees! — 3 dmg × 8",
+        "Spear! — 20 dmg",
+        "Pheromone Spit — gains 1 Personal Hive and 1 Strength; if Personal Hive is already at 3, gains 2 Strength instead"
+      ],
+      "pattern": "Fixed cycle Beeeees! → Spear! → Pheromone Spit, repeating. Personal Hive triggers when the Entomancer takes attack damage, not when an Attack is played. Solo encounter with no summons."
+    },
+    "Infested Prism": {
+      "tier": "elite",
+      "act": 2,
+      "hp": "161",
+      "a8_hp": "171",
+      "powers": [
+        "Vital Spark 2 (3 at A9) — all Skills are Tainted 2 (Tainted X: take X additional damage from Attacks this turn)"
+      ],
+      "moves": [
+        "Jab — 15 dmg",
+        "Radiate — 11 dmg + gains 16 Block",
+        "Whirlwind — 5 dmg × 3",
+        "Pulsate — 8 dmg + gains 20 Block and 2 Vital Spark"
+      ],
+      "a8_moves": [
+        "Jab — 15 dmg",
+        "Radiate — 11 dmg + gains 16 Block",
+        "Whirlwind — 5 dmg × 3",
+        "Pulsate — 8 dmg + gains 22 Block and 2 Vital Spark"
+      ],
+      "a9_moves": [
+        "Jab — 17 dmg",
+        "Radiate — 13 dmg + gains 18 Block",
+        "Whirlwind — 6 dmg × 3",
+        "Pulsate — 10 dmg + gains 22 Block and 3 Vital Spark"
+      ],
+      "pattern": "Fixed four-move cycle Jab → Radiate → Whirlwind → Pulsate, repeating. Vital Spark stacks from Pulsate, raising the Tainted amount carried by every Skill. Solo encounter."
+    },
+    "The Insatiable": {
+      "tier": "boss",
+      "act": 2,
+      "hp": "321",
+      "a8_hp": "341",
+      "moves": [
+        "Liquify Ground — applies 4 Sandpit to each player and shuffles 6 Frantic Escape into your deck, 3 into the draw pile and 3 into the discard pile (Sandpit is a duration debuff: 'In X turns, you will be eaten and die'; Frantic Escape is a 1-cost Colorless Status card: 'Increase Sandpit by 1. Increase the cost of this card by 1.')",
+        "Thrash — 8 dmg × 2",
+        "Lunging Bite — 28 dmg",
+        "Salivate — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Liquify Ground — applies 4 Sandpit to each player and shuffles 6 Frantic Escape into your deck, 3 into the draw pile and 3 into the discard pile (Sandpit is a duration debuff: 'In X turns, you will be eaten and die'; Frantic Escape is a 1-cost Colorless Status card: 'Increase Sandpit by 1. Increase the cost of this card by 1.')",
+        "Thrash — 9 dmg × 2",
+        "Lunging Bite — 31 dmg",
+        "Salivate — gains 3 Strength"
+      ],
+      "pattern": "Always opens with Liquify Ground, then repeats the four-move cycle Thrash → Lunging Bite → Salivate → Thrash, looping back to the first Thrash. Liquify Ground is used on turn 1 only."
+    },
+    "Knowledge Demon": {
+      "tier": "boss",
+      "act": 2,
+      "hp": "379",
+      "a8_hp": "399",
+      "moves": [
+        "Curse of Knowledge — each player chooses one of two debuffs to receive; the options change each time this move is used. 1st use: Disintegration 6 (at the end of your turn, take 6 damage) or Mind Rot 1 (draw 1 fewer card each turn). 2nd use: Disintegration 7 or Sloth 3 (you cannot play more than 3 cards each turn). 3rd use: Disintegration 8 or Waste Away 1 (gain 1 less Energy per turn)",
+        "Slap — 17 dmg",
+        "Knowledge Overwhelming — 8 dmg × 3",
+        "Ponder — 11 dmg, heals 30 HP per player, gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Curse of Knowledge — each player chooses one of two debuffs to receive; the options change each time this move is used. 1st use: Disintegration 6 (at the end of your turn, take 6 damage) or Mind Rot 1 (draw 1 fewer card each turn). 2nd use: Disintegration 7 or Sloth 3 (you cannot play more than 3 cards each turn). 3rd use: Disintegration 8 or Waste Away 1 (gain 1 less Energy per turn)",
+        "Slap — 18 dmg",
+        "Knowledge Overwhelming — 9 dmg × 3",
+        "Ponder — 13 dmg, heals 30 HP per player, gains 3 Strength"
+      ],
+      "pattern": "Cycles Curse of Knowledge → Slap → Knowledge Overwhelming → Ponder. Curse of Knowledge is used three times in total, one option pair per use; after the third, Curse of Knowledge is dropped from the cycle and the remaining three moves repeat in order."
+    },
+    "Crusher": {
+      "tier": "boss",
+      "act": 2,
+      "hp": "209",
+      "a8_hp": "219",
+      "powers": [
+        "Back Attack — deals 50% more damage when it is attacking you from behind",
+        "Crab Rage — when an ally dies, it gains 6 Strength and 99 Block"
+      ],
+      "moves": [
+        "Thrash — 12 dmg",
+        "Enlarging Strike — 4 dmg",
+        "Bug Sting — 6 dmg × 2 + applies 2 Weak and 2 Frail",
+        "Adapt — gains 2 Strength",
+        "Guarded Strike — 12 dmg + gains 18 Block"
+      ],
+      "a9_moves": [
+        "Thrash — 14 dmg",
+        "Enlarging Strike — 4 dmg",
+        "Bug Sting — 7 dmg × 2 + applies 2 Weak and 2 Frail",
+        "Adapt — gains 3 Strength",
+        "Guarded Strike — 14 dmg + gains 18 Block"
+      ],
+      "pattern": "One of the two bodies of the Kaiser Crab boss (the left claw), fought alongside Rocket. Cycles its five moves in fixed order, repeating forever: Thrash → Enlarging Strike → Bug Sting → Adapt → Guarded Strike. The player is surrounded by the two claws and faces only one at a time; whichever claw the player is facing away from gains the Back Attack bonus. When a single-target Attack is automatically played against a random target, the player turns to face whichever claw was targeted."
+    },
+    "Rocket": {
+      "tier": "boss",
+      "act": 2,
+      "hp": "199",
+      "a8_hp": "209",
+      "powers": [
+        "Back Attack — deals 50% more damage when it is attacking you from behind",
+        "Crab Rage — when an ally dies, it gains 6 Strength and 99 Block"
+      ],
+      "moves": [
+        "Targeting Reticle — 3 dmg",
+        "Precision Beam — 18 dmg",
+        "Charge Up — gains 2 Strength",
+        "Laser — 31 dmg",
+        "Recharge — does nothing"
+      ],
+      "a9_moves": [
+        "Targeting Reticle — 4 dmg",
+        "Precision Beam — 20 dmg",
+        "Charge Up — gains 3 Strength",
+        "Laser — 35 dmg",
+        "Recharge — does nothing"
+      ],
+      "pattern": "One of the two bodies of the Kaiser Crab boss (the right claw), fought alongside Crusher. Cycles its five moves in fixed order, repeating forever: Targeting Reticle → Precision Beam → Charge Up → Laser → Recharge. The player is surrounded by the two claws and faces only one at a time; whichever claw the player is facing away from gains the Back Attack bonus. When a single-target Attack is automatically played against a random target, the player turns to face whichever claw was targeted."
+    }
+  }
+}

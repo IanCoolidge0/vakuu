@@ -130,7 +130,7 @@
         "Windup Punch — 3 dmg × 3",
         "Piercing Gaze — 11 dmg"
       ],
-      "pattern": "Encounter is always 3 Inklets. Outer two open with Jab or Windup Punch; center always opens with Windup Punch. After any of Piercing Gaze/Windup Punch, they use Jab; after Jab, random Piercing Gaze or Windup Punch."
+      "pattern": "Outer two Inklets open with Jab or Windup Punch; the center one always opens with Windup Punch. After any of Piercing Gaze/Windup Punch, they use Jab; after Jab, random Piercing Gaze or Windup Punch."
     },
     "Mawler": {
       "tier": "regular",
