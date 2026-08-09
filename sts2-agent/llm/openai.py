@@ -81,11 +81,21 @@ class OpenAIProvider(LLMProvider):
         tool_calls = []
         for item in response.output:
             if item.type == "function_call":
-                tool_calls.append({
-                    "name": item.name,
-                    "input": json.loads(item.arguments),
-                    "id": item.call_id,
-                })
+                try:
+                    args = json.loads(item.arguments)
+                    parse_error = None
+                except json.JSONDecodeError as e:
+                    # Degenerate or truncated generation (e.g. the output
+                    # cap hit mid-arguments). Keep the call so the
+                    # function_call/output pairing stays intact — the agent
+                    # returns an error result and the model retries. Raising
+                    # here would nuke the whole conversation instead.
+                    args = {}
+                    parse_error = f"arguments were not valid JSON ({e})"
+                call = {"name": item.name, "input": args, "id": item.call_id}
+                if parse_error:
+                    call["parse_error"] = parse_error
+                tool_calls.append(call)
 
         # Reasoning-only return: hidden reasoning but no message and no tool
         # call. Don't hand this to the agent — it would re-prompt with a

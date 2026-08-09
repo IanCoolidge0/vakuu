@@ -535,6 +535,21 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     results.append({"tool_use_id": tool_call['id'], "content": result})
                     continue
 
+                # The provider flags calls whose arguments didn't parse
+                # (truncated/degenerate generation). Reject with feedback
+                # instead of executing with empty input.
+                if tool_call.get("parse_error"):
+                    result = json.dumps({"error":
+                        f"Call to {name} rejected — {tool_call['parse_error']}. "
+                        "The generation was likely truncated; re-issue the "
+                        "call with concise, valid arguments."})
+                    print(f"  {RED}>>> {name}(<unparseable args>) [rejected]{RESET}")
+                    if self.logger:
+                        self.logger.tool_call(name, {"parse_error": tool_call["parse_error"]})
+                        self.logger.tool_result(name, result)
+                    results.append({"tool_use_id": tool_call['id'], "content": result})
+                    continue
+
                 # proceed is valid on every screen, so it can fire into a
                 # screen the model has never seen (e.g. a rewards screen
                 # appearing right after a kill). Abort only when the live
@@ -682,6 +697,11 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     self.logger.error(f"LLM error (send_tool_results): {e}")
                 self.llm.clear_history()
                 self._pending_tool_calls = False
+                # The current batch was already executed and its results died
+                # with the cleared history — emptying tool_calls keeps the
+                # leftover-cancellation block from re-cancelling them into
+                # the fresh conversation with a bogus cap message.
+                tool_calls = []
                 break
 
             if text:
