@@ -68,12 +68,12 @@ public class AgentCardSelector : ICardSelector
         _pending = null;
     }
 
-    public CardModel? GetSelectedCardReward(
+    public CardRewardSelection GetSelectedCardReward(
         IReadOnlyList<CardCreationResult> options,
         IReadOnlyList<CardRewardAlternative> alternatives)
     {
         // Not used for combat card selection
-        return null;
+        return default;
     }
 }
 

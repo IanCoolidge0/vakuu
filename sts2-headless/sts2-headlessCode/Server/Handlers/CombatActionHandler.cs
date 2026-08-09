@@ -81,6 +81,16 @@ public static class CombatActionHandler
     }
 
     /// <summary>
+    /// Play phase is tracked per-player since v0.107 (multiplayer); headless
+    /// runs are single-player, so the first player is the local one.
+    /// </summary>
+    private static bool IsPlayPhase()
+    {
+        var player = NRun.Instance?._state.Players.FirstOrDefault();
+        return player?.PlayerCombatState?.Phase == PlayerTurnPhase.Play;
+    }
+
+    /// <summary>
     /// Waits until combat is back in play phase (ready for next action) or combat has ended.
     /// Two-phase wait: first waits for the action to leave play phase (start processing),
     /// then waits for play phase to return, combat to end, or card selection to trigger.
@@ -99,7 +109,7 @@ public static class CombatActionHandler
                 await WaitForPostCombatScreen();
                 return;
             }
-            if (!CombatManager.Instance.IsPlayPhase)
+            if (!IsPlayPhase())
                 break;  // Action started processing
             if (AgentCardSelector.Pending is not null)
                 return;
@@ -115,7 +125,7 @@ public static class CombatActionHandler
                 await WaitForPostCombatScreen();
                 return;
             }
-            if (CombatManager.Instance.IsPlayPhase)
+            if (IsPlayPhase())
                 return;
             if (AgentCardSelector.Pending is not null)
                 return;
@@ -144,9 +154,9 @@ public static class CombatActionHandler
     }
 
     private static string PlayCard(CombatActionRequest request, Player player,
-        PlayerCombatState playerCombat, CombatState combatState)
+        PlayerCombatState playerCombat, ICombatState combatState)
     {
-        if (!CombatManager.Instance.IsPlayPhase)
+        if (!IsPlayPhase())
             return Error("Not in play phase.");
 
         if (request.CardIndex is null)
@@ -212,7 +222,7 @@ public static class CombatActionHandler
 
     private static string EndTurn(Player player)
     {
-        if (!CombatManager.Instance.IsPlayPhase)
+        if (!IsPlayPhase())
             return Error("Not in play phase.");
 
         // End-of-turn powers (e.g. Well-Laid Plans retain) can trigger a card
@@ -227,9 +237,9 @@ public static class CombatActionHandler
         return Success("Ended turn.");
     }
 
-    private static string UsePotion(CombatActionRequest request, Player player, CombatState combatState)
+    private static string UsePotion(CombatActionRequest request, Player player, ICombatState combatState)
     {
-        if (!CombatManager.Instance.IsPlayPhase)
+        if (!IsPlayPhase())
             return Error("Not in play phase.");
 
         if (request.PotionIndex is null)

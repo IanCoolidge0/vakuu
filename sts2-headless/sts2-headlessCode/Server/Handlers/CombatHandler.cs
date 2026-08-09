@@ -114,7 +114,7 @@ public static class CombatHandler
         return JsonSerializer.Serialize(response, JsonOptions);
     }
 
-    private static EnemyInfo BuildEnemyInfo(int index, Creature enemy, CombatState combatState)
+    private static EnemyInfo BuildEnemyInfo(int index, Creature enemy, ICombatState combatState)
     {
         var intents = new List<IntentInfo>();
         if (enemy.Monster?.NextMove.Intents is { } moveIntents)

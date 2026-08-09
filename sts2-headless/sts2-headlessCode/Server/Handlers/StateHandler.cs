@@ -488,7 +488,7 @@ public static class StateHandler
         if (state.CurrentRoom is not MerchantRoom merchantRoom)
             return null;
 
-        var inventory = merchantRoom.Inventory;
+        var inventory = merchantRoom.GetLocalInventory();
 
         var cards = new List<ShopCardInfo>();
         foreach (var entry in inventory.CardEntries)

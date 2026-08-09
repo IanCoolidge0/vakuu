@@ -248,9 +248,9 @@ public static class ActionHandler
         if (overlay is not NCardRewardSelectionScreen cardScreen)
             return Error("Not on card reward screen.");
 
-        // The card reward screen's completion source expects (empty holders, removeReward=true) to skip
-        cardScreen._completionSource?.TrySetResult(
-            new Tuple<IEnumerable<NCardHolder>, bool>(Array.Empty<NCardHolder>(), true));
+        // The card reward screen's completion source resolves to a selected
+        // option index; null means the reward was skipped
+        cardScreen._completionSource?.TrySetResult(null);
         return Success("Skipped card reward.");
     }
 
@@ -265,7 +265,7 @@ public static class ActionHandler
         if (state.CurrentRoom is not MerchantRoom merchantRoom)
             return Error("Not in a shop.");
 
-        var inventory = merchantRoom.Inventory;
+        var inventory = merchantRoom.GetLocalInventory();
         var allEntries = inventory.AllEntries.Where(e => e.IsStocked).ToList();
 
         if (slotIndex < 0 || slotIndex >= allEntries.Count)
@@ -285,14 +285,15 @@ public static class ActionHandler
         if (state.CurrentRoom is not MerchantRoom merchantRoom)
             return Error("Not in a shop.");
 
-        var removal = merchantRoom.Inventory.CardRemovalEntry;
+        var inventory = merchantRoom.GetLocalInventory();
+        var removal = inventory.CardRemovalEntry;
         if (removal is null || !removal.IsStocked)
             return Error("Card removal not available.");
 
         if (!removal.EnoughGold)
             return Error($"Not enough gold for card removal (need {removal.Cost}).");
 
-        _ = removal.OnTryPurchaseWrapper(merchantRoom.Inventory);
+        _ = removal.OnTryPurchaseWrapper(inventory);
         return Success($"Opening card removal (cost: {removal.Cost})");
     }
 
