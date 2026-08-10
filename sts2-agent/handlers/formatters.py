@@ -3,7 +3,7 @@
 import json
 import re
 
-from compendium import format_enemies_section
+from compendium import format_enemies_section, format_enchantment_mentions
 
 # Card/relic text arrives from the mod with raw engine markup: inline icon
 # resource paths ("gain res://...energy_icon.pngres://...energy_icon.png")
@@ -34,6 +34,58 @@ def clean_desc(text, keep_newlines: bool = False) -> str:
 def fmt_cost(cost) -> str:
     """Render a card cost — -1 is an X-cost card (spends all remaining energy)."""
     return "X" if cost == -1 else str(cost)
+
+
+def card_tags(c) -> str:
+    """Type bracket with keyword flags: '[attack]', '[status, Unplayable]'.
+    Keywords come from the card's structured keyword set (they are not part
+    of description text) and reflect enchantment grants/removals."""
+    tags = [c['type']]
+    tags.extend(c.get('keywords') or [])
+    return "[" + ", ".join(tags) + "]"
+
+
+def ench_label(c) -> str:
+    """Enchantment label without brackets: 'Sharp 2', 'Glam(disabled)'.
+    Empty for unenchanted cards."""
+    e = c.get('enchantment')
+    if not e:
+        return ""
+    label = e['name']
+    if e.get('amount') is not None:
+        label += f" {e['amount']}"
+    if e.get('disabled'):
+        label += "(disabled)"
+    return label
+
+
+def ench_bracket(c) -> str:
+    """Bracket appended to the card NAME so enchanted copies are
+    distinguishable and addressable: 'Strike[Sharp 2]'. '(disabled)' mirrors
+    the greyed-out icon in the visual game (e.g. Glam's once-per-combat
+    Replay already consumed)."""
+    label = ench_label(c)
+    return f"[{label}]" if label else ""
+
+
+def card_display_name(c) -> str:
+    """Full display name: base name + upgrade suffix + enchantment bracket.
+    This is the name play_card accepts."""
+    return f"{c['name']}{'+' if c.get('upgraded') else ''}{ench_bracket(c)}"
+
+
+def ench_definitions_section(cards) -> str:
+    """Definitions for the enchantments present among `cards`, one line per
+    unique label, using the game's resolved text (amounts included). Empty
+    when no card is enchanted."""
+    seen = {}
+    for c in cards:
+        label = ench_label(c)
+        if label and label not in seen:
+            seen[label] = clean_desc((c.get('enchantment') or {}).get('description', ''))
+    if not seen:
+        return ""
+    return "ENCHANTMENTS:\n" + "\n".join(f"  {k}: {v}" for k, v in seen.items())
 
 
 def format_combat(state: dict, combat: dict) -> str:
@@ -78,8 +130,7 @@ def format_combat(state: dict, combat: dict) -> str:
     lines.append("")
     lines.append("YOUR HAND:")
     for i, c in enumerate(combat['hand']):
-        upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
 
     lines.append("")
     lines.append(f"Draw pile: {combat['draw_pile_count']} | Discard: {combat['discard_pile_count']} | Exhaust: {combat['exhaust_pile_count']}")
@@ -94,6 +145,11 @@ def format_combat(state: dict, combat: dict) -> str:
     for r in combat['relics']:
         counter = f" [{r['counter']}]" if r.get('counter') is not None else ""
         lines.append(f"  {r['name']}{counter}")
+
+    ench_defs = ench_definitions_section(combat['hand'])
+    if ench_defs:
+        lines.append("")
+        lines.append(ench_defs)
 
     return "\n".join(lines)
 
@@ -126,6 +182,10 @@ def format_event(state: dict) -> str:
     for o in event['options']:
         locked = " [LOCKED]" if o['is_locked'] else ""
         lines.append(f"  [{o['index']}] {o['label']}{locked}: {clean_desc(o['description'])}")
+    mentions = format_enchantment_mentions(
+        event.get('body'), *(o.get('description') for o in event['options']))
+    if mentions:
+        lines.append("\n" + mentions)
     return "\n".join(lines)
 
 
@@ -133,8 +193,10 @@ def format_card_reward(state: dict) -> str:
     lines = [format_state(state)]
     lines.append("\nChoose a card to add to your deck (or skip):")
     for i, c in enumerate(state['card_reward']['cards']):
-        upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+    ench_defs = ench_definitions_section(state['card_reward']['cards'])
+    if ench_defs:
+        lines.append("\n" + ench_defs)
     return "\n".join(lines)
 
 
@@ -166,9 +228,8 @@ def format_shop(state: dict) -> str:
     lines.append(f"\nShop inventory (you have {state['gold']} gold):")
     lines.append("Cards:")
     for c in shop['cards']:
-        upgraded = "+" if c['upgraded'] else ""
         affordable = "" if c['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {c['price']}g{affordable} - {clean_desc(c['description'])}")
+        lines.append(f"  {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {c['price']}g{affordable} - {clean_desc(c['description'])}")
     lines.append("Relics:")
     for r in shop['relics']:
         affordable = "" if r['price'] <= state['gold'] else " [CAN'T AFFORD]"
@@ -217,8 +278,10 @@ def format_card_select(state: dict) -> str:
     lines.append(f"\nCard selection ({cs['screen_type']}):")
     lines.append("Choose a card, then confirm:")
     for i, c in enumerate(cs['cards']):
-        upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} ({fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+    ench_defs = ench_definitions_section(cs['cards'])
+    if ench_defs:
+        lines.append("\n" + ench_defs)
     return "\n".join(lines)
 
 
@@ -240,8 +303,10 @@ def format_hand_select(state: dict) -> str:
         f"Select {count_str} card(s):",
     ]
     for i, c in enumerate(hs['cards']):
-        upgraded = "+" if c['upgraded'] else ""
-        lines.append(f"  [{i}] {c['name']}{upgraded} (cost {fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+    ench_defs = ench_definitions_section(hs['cards'])
+    if ench_defs:
+        lines.append("\n" + ench_defs)
     return "\n".join(lines)
 
 

@@ -222,6 +222,29 @@ public record CardInfo
     [JsonPropertyName("type")] public string Type { get; init; } = "";
     [JsonPropertyName("description")] public string Description { get; init; } = "";
     [JsonPropertyName("upgraded")] public bool Upgraded { get; init; }
+    // Keyword flags (Exhaust, Ethereal, Innate, Retain, Unplayable, …) live
+    // in a structured set on CardModel, NOT in the description text — without
+    // this field they are invisible to the agent. Includes keywords granted
+    // or removed by enchantments. Null when the card has none.
+    [JsonPropertyName("keywords")] public List<string>? Keywords { get; init; }
+    [JsonPropertyName("enchantment")] public CardEnchantmentInfo? Enchantment { get; init; }
+}
+
+public record CardEnchantmentInfo
+{
+    [JsonPropertyName("name")] public string Name { get; init; } = "";
+    // Display amount for value-bearing enchantments (Sharp 2); null when
+    // the enchantment doesn't show one (Glam).
+    [JsonPropertyName("amount")] public int? Amount { get; init; }
+    // The enchantment's resolved tooltip text, amounts included.
+    [JsonPropertyName("description")] public string Description { get; init; } = "";
+    // Extra text some enchantments paint onto the card itself (rule riders
+    // like Corrupted's HP loss); null for the rest.
+    [JsonPropertyName("card_text")] public string? CardText { get; init; }
+    // True when the enchantment is currently inactive (e.g. Glam's
+    // once-per-combat Replay already consumed). The visual game greys the
+    // enchantment out; without this the agent can't tell.
+    [JsonPropertyName("disabled")] public bool Disabled { get; init; }
 }
 
 public record PowerInfo

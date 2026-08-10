@@ -2,6 +2,7 @@
 
 import builtins
 import json
+import re
 import time
 import traceback
 
@@ -14,10 +15,12 @@ def print(*args, **kwargs):
 from client import GameClient
 from llm.base import LLMProvider
 from tools import get_tools_for_screen
+from compendium import format_keywords_section
 from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
     format_card_select, format_hand_select, fmt_cost, clean_desc,
+    card_tags, card_display_name, ench_definitions_section,
 )
 
 # ANSI color codes
@@ -56,6 +59,7 @@ class Agent:
         # in a single request (see _take_action).
         self._pending_results: list | None = None
         self._pending_reason: str | None = None
+        self._keywords_applied = False
 
     def run(self):
         """Main loop — play until the run ends or we hit the action limit."""
@@ -113,6 +117,16 @@ class Agent:
                 return
 
             screen = state.get("screen", "unknown")
+
+            # Append the character's keyword glossary to the system prompt
+            # once per run, before the first prompt is sent. The system
+            # prompt is the only context that survives history clears, and
+            # as a stable prefix it stays cached.
+            if not self._keywords_applied and state.get("character"):
+                glossary = format_keywords_section(state["character"])
+                if glossary:
+                    self.llm.system_prompt += "\n\n" + glossary
+                self._keywords_applied = True
 
             # Clear history on major screen transitions — keep context lean
             # Never clear if we have pending tool calls (would corrupt message history)
@@ -251,37 +265,51 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             pass
         return None
 
+    @staticmethod
+    def _norm_name(s: str) -> str:
+        """Normalize a card name for matching: lowercase, collapsed spaces,
+        'name +' → 'name+', 'name [' → 'name['."""
+        s = " ".join(s.lower().split())
+        return s.replace(" +", "+").replace(" [", "[")
+
     def _resolve_card_index(self, card_name: str) -> int | None:
         """Resolve a card name to its index in the current hand.
 
-        Exact and base-name matches only — no substring fallback. Many card
-        names nest ('Strike' is a substring of 'Pommel Strike'), so a fuzzy
-        match silently plays the wrong card when the requested one isn't in
-        hand. Better to fail and let the model re-decide with the real hand.
+        Display names carry upgrade and enchantment markers —
+        'Strike+', 'Strike[Sharp 2]' — so the ladder is:
+          1. exact display name (picks a specific copy; a bare name exactly
+             matches the unenchanted copy when both exist),
+          2. name+upgrade ignoring enchantment brackets (first match),
+          3. base name (first match).
+        No substring fallback — many card names nest ('Strike' inside
+        'Pommel Strike'), and a fuzzy match silently plays the wrong card.
         """
         try:
-            combat = self.client.get_combat()
-            hand = combat.get("hand", [])
-            # Strip trailing "+" that the formatter adds for upgraded cards
-            base_name = card_name.rstrip("+").rstrip()
-            # Exact match first (with upgrade suffix)
-            for i, card in enumerate(hand):
-                display = card["name"] + ("+" if card["upgraded"] else "")
-                if display.lower() == card_name.lower().replace(" +", "+"):
-                    return i
-            # Match by base name
-            for i, card in enumerate(hand):
-                if card["name"].lower() == base_name.lower():
-                    return i
+            hand = self.client.get_combat().get("hand", [])
         except Exception:
-            pass
+            return None
+        req = self._norm_name(card_name)
+        req_nb = re.sub(r"\[[^\]]*\]$", "", req).strip()
+        base = req_nb.rstrip("+").strip()
+        displays = [(i, self._norm_name(card_display_name(c)), c)
+                    for i, c in enumerate(hand)]
+        for i, d, c in displays:
+            if d == req:
+                return i
+        for i, d, c in displays:
+            if re.sub(r"\[[^\]]*\]$", "", d) == req_nb:
+                return i
+        for i, d, c in displays:
+            if c["name"].lower() == base:
+                return i
         return None
 
     def _hand_names(self) -> list[str]:
-        """Display names of the cards currently in hand."""
+        """Full display names of the cards currently in hand (upgrade and
+        enchantment markers included — the names play_card accepts)."""
         try:
             hand = self.client.get_combat().get("hand", [])
-            return [c["name"] + ("+" if c["upgraded"] else "") for c in hand]
+            return [card_display_name(c) for c in hand]
         except Exception:
             return []
 
@@ -290,8 +318,13 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
         try:
             state = self.client.get_state()
             cards = state.get("hand_select", {}).get("cards", [])
+            req = self._norm_name(card_name)
+            base = re.sub(r"\[[^\]]*\]$", "", req).strip().rstrip("+").strip()
             for i, card in enumerate(cards):
-                if card["name"].lower() == card_name.lower():
+                if self._norm_name(card_display_name(card)) == req:
+                    return i
+            for i, card in enumerate(cards):
+                if card["name"].lower() == base:
                     return i
         except Exception:
             pass
@@ -408,8 +441,10 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             if cards:
                 lines.append(f"\nDeck ({len(cards)} cards):")
                 for c in cards:
-                    up = "+" if c['upgraded'] else ""
-                    lines.append(f"  {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}] - {clean_desc(c['description'])}")
+                    lines.append(f"  {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+                ench_defs = ench_definitions_section(cards)
+                if ench_defs:
+                    lines.append(ench_defs)
         except Exception:
             pass
 
@@ -878,24 +913,35 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     cards = deck.get("cards", [])
                     lines = [f"Deck ({len(cards)} cards):"]
                     for i, c in enumerate(cards):
-                        up = "+" if c['upgraded'] else ""
-                        lines.append(f"  [{i}] {c['name']}{up} ({fmt_cost(c['cost'])}) [{c['type']}]")
+                        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)}")
+                    ench_defs = ench_definitions_section(cards)
+                    if ench_defs:
+                        lines.append("\n" + ench_defs)
                     return "\n".join(lines)
                 case "view_map":
                     map_data = self.client.get_map()
                     return format_map(map_data)
                 case "view_draw_pile":
                     piles = self.client.get_combat_piles()
+
+                    def pile_line(c):
+                        return f"  {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)}"
+
                     lines = [f"Draw pile ({piles['draw_pile_count']}):"]
                     for c in piles['draw_pile']:
-                        lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
+                        lines.append(pile_line(c))
                     lines.append(f"\nDiscard pile ({len(piles['discard_pile'])}):")
                     for c in piles['discard_pile']:
-                        lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
+                        lines.append(pile_line(c))
                     if piles['exhaust_pile']:
                         lines.append(f"\nExhaust pile ({len(piles['exhaust_pile'])}):")
                         for c in piles['exhaust_pile']:
-                            lines.append(f"  {c['name']} ({fmt_cost(c['cost'])}) [{c['type']}]")
+                            lines.append(pile_line(c))
+                    all_cards = (piles['draw_pile'] + piles['discard_pile']
+                                 + piles['exhaust_pile'])
+                    ench_defs = ench_definitions_section(all_cards)
+                    if ench_defs:
+                        lines.append("\n" + ench_defs)
                     return "\n".join(lines)
 
                 case _:

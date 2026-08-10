@@ -78,6 +78,50 @@ def format_enemy_block(name: str, ascension: int = 0) -> str | None:
     return "\n".join(lines)
 
 
+def format_keywords_section(character: str | None) -> str:
+    """Terse keyword glossary for the system prompt: neutral keywords plus
+    the section matching the current character. Returns '' if no data.
+    Kept minimal — one line per keyword, mechanical definitions only."""
+    path = Path(__file__).parent / "keywords.json"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return ""
+    entries = dict(data.get("neutral", {}))
+    if character:
+        for key, kws in data.get("characters", {}).items():
+            if key.lower() in character.lower():
+                entries.update(kws)
+    if not entries:
+        return ""
+    lines = [f"{k}: {v}" for k, v in entries.items()]
+    return "## Keywords\n" + "\n".join(lines)
+
+
+def format_enchantment_mentions(*texts: str | None) -> str:
+    """One-line definitions for enchantment names appearing bare in the given
+    texts (event bodies/options). Enchanted cards self-describe via their DTO;
+    this covers mentions like 'Enchant all cards ... with Glam'. Returns ''
+    when nothing matches."""
+    import re
+    path = Path(__file__).parent / "enchantments.json"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return ""
+    blob = " ".join(t for t in texts if t)
+    hits = []
+    for name, definition in data.get("enchantments", {}).items():
+        # Word-boundary match; 'Swift Potion' must not trigger 'Swift'.
+        if re.search(rf"\b{re.escape(name)}\b(?! Potion)", blob):
+            hits.append(f"  {name}: {definition}")
+    if not hits:
+        return ""
+    return "Enchantments mentioned:\n" + "\n".join(hits)
+
+
 def format_enemies_section(names: list[str], ascension: int = 0) -> str:
     """Format a section for all known enemies in the encounter. Silently
     omits enemies without entries. Returns empty string if no entries match."""

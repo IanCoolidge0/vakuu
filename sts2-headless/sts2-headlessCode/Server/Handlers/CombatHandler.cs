@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Enchantments;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
@@ -165,6 +166,25 @@ public static class CombatHandler
         var description = card.Description;
         card.DynamicVars.AddTo(description);
 
+        var keywords = card.Keywords
+            .Where(k => k != CardKeyword.None)
+            .Select(k => k.ToString())
+            .ToList();
+
+        CardEnchantmentInfo? enchantment = null;
+        if (card.Enchantment is { } ench)
+        {
+            string? extraText = ench.DynamicExtraCardText?.GetFormattedText();
+            enchantment = new CardEnchantmentInfo
+            {
+                Name = ench.Title.GetFormattedText() ?? ench.Id.ToString(),
+                Amount = ench.ShowAmount ? ench.DisplayAmount : null,
+                Description = CleanDescription(ench.DynamicDescription.GetFormattedText() ?? ""),
+                CardText = string.IsNullOrWhiteSpace(extraText) ? null : CleanDescription(extraText),
+                Disabled = ench.Status == EnchantmentStatus.Disabled
+            };
+        }
+
         return new CardInfo
         {
             Id = card.Id.ToString(),
@@ -172,7 +192,9 @@ public static class CombatHandler
             Cost = cost,
             Type = card.Type.ToString().ToLower(),
             Description = CleanDescription(description?.GetFormattedText() ?? ""),
-            Upgraded = card.IsUpgraded
+            Upgraded = card.IsUpgraded,
+            Keywords = keywords.Count > 0 ? keywords : null,
+            Enchantment = enchantment
         };
     }
 

@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Enchantments",
+    "note": "Used ONLY to define enchantment names mentioned bare in event/reward text (e.g. 'Enchant ... with Glam') — enchanted cards themselves carry the game's resolved enchantment text in their DTO. Values with X are per-instance; the card's own text shows the real number.",
+    "missing": [
+      "Slither and Slumbering Essence exist in the game (Models.Enchantments) but have no wiki entry; add definitions from the game's localization if they ever appear by name in event text."
+    ]
+  },
+  "enchantments": {
+    "Adroit": "This card also gains X Block.",
+    "Clone": "This card can be duplicated at Rest Sites.",
+    "Corrupted": "This card deals 50% more damage, but you lose 2 HP when playing it.",
+    "Glam": "This card has Replay once per combat (played an additional time).",
+    "Goopy": "This card gains Exhaust; each play permanently increases its Block by 1.",
+    "Imbued": "This card is played automatically at the start of each combat.",
+    "Inky": "This card deals 1 additional damage and applies 1 Weak.",
+    "Instinct": "This card's attack damage is doubled.",
+    "Momentum": "This card's attack damage increases by X this combat each time it is played.",
+    "Nimble": "This card's Block is increased by X.",
+    "Perfect Fit": "When this card would be shuffled into the draw pile, it goes on top instead.",
+    "Royally Approved": "This card gains Innate and Retain.",
+    "Sharp": "This card's damage is increased by X.",
+    "Swift": "The first time you play this card, draw X cards.",
+    "Soul's Power": "This card loses Exhaust.",
+    "Sown": "The first time you play this card each combat, gain Energy.",
+    "Spiral": "This card gains Replay 1 (played an additional time).",
+    "Steady": "This card gains Retain.",
+    "Tezcatara's Ember": "This card costs 0, deals 3 additional damage, and gains Eternal.",
+    "Vigorous": "The first time this card is played, it deals X additional damage."
+  }
+}

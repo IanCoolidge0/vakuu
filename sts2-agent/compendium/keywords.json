@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Keywords",
+    "note": "Injected into the system prompt once per run: 'neutral' always, plus the section whose key appears in the current character name. Definitions are terse mechanical facts from the wiki — no strategy. Regenerate by re-fetching the source page (WebFetch; curl is Cloudflare-blocked)."
+  },
+  "neutral": {
+    "Block": "Prevents damage until next turn; damage is dealt to Block before HP.",
+    "Energy": "Spent to play cards; refills to 3 at the start of each turn.",
+    "Eternal": "Card cannot be removed or transformed from your deck.",
+    "Exhaust": "Card is removed from the deck until the end of combat.",
+    "Ethereal": "Card is Exhausted if still in hand at end of turn.",
+    "Fatal": "Effect triggers when this card kills a non-Minion enemy.",
+    "Innate": "Card always appears in your first hand each combat.",
+    "Retain": "Card is not discarded at end of turn.",
+    "Replay": "Card is played an additional time in a row.",
+    "Unplayable": "Card cannot be played and has no Energy cost."
+  },
+  "characters": {
+    "Silent": {
+      "Poison": "Poisoned creatures lose HP equal to their Poison at end of your turn, then Poison is reduced by 1.",
+      "Sly": "If this card is discarded during your turn, it immediately plays for free."
+    },
+    "Regent": {
+      "Stars": "An alternative resource; certain cards cost Stars to play.",
+      "Forge": "Forge X adds X damage to every Sovereign Blade in all zones (hand, draw, discard, exhaust). If none exists, Forging first creates one in hand.",
+      "Sovereign Blade": "Colorless Attack card created by Forging; costs 2 Energy (1 when upgraded); its damage is increased by each Forge."
+    },
+    "Necrobinder": {
+      "Doom": "At the end of a creature's turn, if its Doom >= its HP, it dies.",
+      "Summon": "Summoning X summons Osty with X max HP."
+    },
+    "Defect": {
+      "Channel": "Channeling an Orb puts it into the leftmost empty Orb slot.",
+      "Evoke": "Evoking an Orb consumes it for a stronger burst effect.",
+      "Focus": "Focus X increases the effectiveness of your Orbs by X.",
+      "Lightning Orb": "Passive: 3 damage to a random enemy. Evoke: 8 damage to a random enemy.",
+      "Frost Orb": "Passive: gain 2 Block. Evoke: gain 5 Block.",
+      "Dark Orb": "Passive: stores +6 damage. Evoke: deals stored damage to the lowest-HP enemy.",
+      "Plasma Orb": "Passive: +1 Energy next turn. Evoke: gain 2 Energy.",
+      "Glass Orb": "Passive: 4 damage to ALL enemies, decreasing by 1 per turn. Evoke: double its passive damage."
+    }
+  }
+}
