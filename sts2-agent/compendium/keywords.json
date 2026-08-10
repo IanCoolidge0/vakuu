@@ -21,7 +21,7 @@
       "Sly": "If this card is discarded during your turn, it immediately plays for free."
     },
     "Regent": {
-      "Stars": "An alternative resource; certain cards cost Stars to play.",
+      "Stars": "A resource generated and spent by cards, alongside Energy (some cards cost both; a cost like '1+2S' means 1 Energy and 2 Stars). Your current Stars are shown in combat. [S] in card text is 1 Star.",
       "Forge": "Forge X adds X damage to every Sovereign Blade in all zones (hand, draw, discard, exhaust). If none exists, Forging first creates one in hand.",
       "Sovereign Blade": "Colorless Attack card created by Forging; costs 2 Energy (1 when upgraded); its damage is increased by each Forge."
     },

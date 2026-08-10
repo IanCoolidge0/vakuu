@@ -9,6 +9,7 @@ from compendium import format_enemies_section, format_enchantment_mentions
 # resource paths ("gain res://...energy_icon.pngres://...energy_icon.png")
 # and half-stripped localization templates (")|}"). Make it readable.
 _ENERGY_ICON_RE = re.compile(r"res://\S*?energy_icon\.png")
+_STAR_ICON_RE = re.compile(r"res://\S*?star_icon\.png")
 _ICON_RE = re.compile(r"res://\S+?\.(?:png|svg|webp|jpe?g)")
 _MARKUP_RE = re.compile(r"[{}|]")
 
@@ -23,6 +24,7 @@ def clean_desc(text, keep_newlines: bool = False) -> str:
     if not text:
         return ""
     text = _ENERGY_ICON_RE.sub("[E]", text)  # each icon = 1 energy
+    text = _STAR_ICON_RE.sub("[S]", text)    # each icon = 1 star (Regent)
     text = _ICON_RE.sub("", text)            # any other inline icon
     text = _MARKUP_RE.sub("", text)          # template remnants like ')|}'
     if not keep_newlines:
@@ -34,6 +36,16 @@ def clean_desc(text, keep_newlines: bool = False) -> str:
 def fmt_cost(cost) -> str:
     """Render a card cost — -1 is an X-cost card (spends all remaining energy)."""
     return "X" if cost == -1 else str(cost)
+
+
+def fmt_card_cost(c) -> str:
+    """Full cost of a card: energy, plus Stars when the card has a star cost
+    (Regent; not mutually exclusive): '1', 'X', '1+2S', '0+XS'."""
+    cost = fmt_cost(c['cost'])
+    sc = c.get('star_cost')
+    if sc is None:
+        return cost
+    return f"{cost}+{'X' if sc == -1 else sc}S"
 
 
 def card_tags(c) -> str:
@@ -105,8 +117,14 @@ def format_combat(state: dict, combat: dict) -> str:
     lines += [
         f"=== COMBAT (Turn {combat['turn']}) ===",
         f"Energy: {combat['energy']}/{combat['max_energy']}",
-        f"HP: {combat['player']['hp']}/{combat['player']['max_hp']} | Block: {combat['player']['block']}",
     ]
+    # Stars (Regent): shown whenever they're in play — nonzero, or a card in
+    # hand has a star cost (zero Stars is then load-bearing information).
+    stars = combat.get('stars') or 0
+    if stars or any(c.get('star_cost') is not None for c in combat['hand']):
+        lines.append(f"Stars: {stars}")
+    lines.append(
+        f"HP: {combat['player']['hp']}/{combat['player']['max_hp']} | Block: {combat['player']['block']}")
 
     if combat['player']['powers']:
         powers = ", ".join(f"{p['name']}({p['amount']})" for p in combat['player']['powers'])
@@ -130,7 +148,7 @@ def format_combat(state: dict, combat: dict) -> str:
     lines.append("")
     lines.append("YOUR HAND:")
     for i, c in enumerate(combat['hand']):
-        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_card_cost(c)}) {card_tags(c)} - {clean_desc(c['description'])}")
 
     lines.append("")
     lines.append(f"Draw pile: {combat['draw_pile_count']} | Discard: {combat['discard_pile_count']} | Exhaust: {combat['exhaust_pile_count']}")
@@ -193,7 +211,7 @@ def format_card_reward(state: dict) -> str:
     lines = [format_state(state)]
     lines.append("\nChoose a card to add to your deck (or skip):")
     for i, c in enumerate(state['card_reward']['cards']):
-        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_card_cost(c)}) {card_tags(c)} - {clean_desc(c['description'])}")
     ench_defs = ench_definitions_section(state['card_reward']['cards'])
     if ench_defs:
         lines.append("\n" + ench_defs)
@@ -229,7 +247,7 @@ def format_shop(state: dict) -> str:
     lines.append("Cards:")
     for c in shop['cards']:
         affordable = "" if c['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {c['price']}g{affordable} - {clean_desc(c['description'])}")
+        lines.append(f"  {card_display_name(c)} (cost {fmt_card_cost(c)}) {card_tags(c)} - {c['price']}g{affordable} - {clean_desc(c['description'])}")
     lines.append("Relics:")
     for r in shop['relics']:
         affordable = "" if r['price'] <= state['gold'] else " [CAN'T AFFORD]"
@@ -278,7 +296,7 @@ def format_card_select(state: dict) -> str:
     lines.append(f"\nCard selection ({cs['screen_type']}):")
     lines.append("Choose a card, then confirm:")
     for i, c in enumerate(cs['cards']):
-        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_card_cost(c)}) {card_tags(c)} - {clean_desc(c['description'])}")
     ench_defs = ench_definitions_section(cs['cards'])
     if ench_defs:
         lines.append("\n" + ench_defs)
@@ -303,7 +321,7 @@ def format_hand_select(state: dict) -> str:
         f"Select {count_str} card(s):",
     ]
     for i, c in enumerate(hs['cards']):
-        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+        lines.append(f"  [{i}] {card_display_name(c)} (cost {fmt_card_cost(c)}) {card_tags(c)} - {clean_desc(c['description'])}")
     ench_defs = ench_definitions_section(hs['cards'])
     if ench_defs:
         lines.append("\n" + ench_defs)

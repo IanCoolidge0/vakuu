@@ -64,6 +64,7 @@ public static class CombatHandler
             Turn = combatState.RoundNumber,
             Energy = playerCombat.Energy,
             MaxEnergy = playerCombat.MaxEnergy,
+            Stars = playerCombat.Stars,
             Player = new CombatPlayerInfo
             {
                 Name = player.Creature.Name,
@@ -163,6 +164,14 @@ public static class CombatHandler
         else
             cost = card.EnergyCost.GetWithModifiers(CostModifiers.All);
 
+        // Star cost (Regent): -1 in CanonicalStarCost means "no star cost",
+        // mirrored here as null; HasStarCostX maps to -1 like energy X.
+        int? starCost = null;
+        if (card.HasStarCostX)
+            starCost = -1;
+        else if (card.CurrentStarCost >= 0)
+            starCost = card.CurrentStarCost;
+
         var description = card.Description;
         card.DynamicVars.AddTo(description);
 
@@ -193,6 +202,7 @@ public static class CombatHandler
             Type = card.Type.ToString().ToLower(),
             Description = CleanDescription(description?.GetFormattedText() ?? ""),
             Upgraded = card.IsUpgraded,
+            StarCost = starCost,
             Keywords = keywords.Count > 0 ? keywords : null,
             Enchantment = enchantment
         };

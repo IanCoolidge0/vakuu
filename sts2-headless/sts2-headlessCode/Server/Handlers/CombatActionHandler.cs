@@ -72,10 +72,13 @@ public static class CombatActionHandler
         // Wait until the game is ready for the next input
         await WaitForReady();
 
-        // If no card selection is pending, pop the selector off the stack so it
-        // doesn't intercept manual play or other game-driven selections.
-        if (AgentCardSelector.Pending is null)
-            AgentCardSelector.CleanupScope();
+        // NOTE: the selector deliberately stays installed for the whole
+        // combat. A card's async OnPlay can reach its CardSelectCmd.FromHand
+        // await AFTER WaitForReady returns (Photon Cut: attack → draw →
+        // select), and popping the selector in that window hands the
+        // selection to the game's default UI — invisible in headless mode,
+        // deadlocking input while every action phantom-succeeds. Combat-end
+        // cleanup happens in StateHandler.DetectScreen.
 
         return result;
     }
@@ -153,9 +156,27 @@ public static class CombatActionHandler
         }
     }
 
+    /// <summary>
+    /// Install the blocking agent selector if it isn't already, and record
+    /// the current action as the selection trigger. The selector persists
+    /// across actions so late-firing selections are always intercepted.
+    /// </summary>
+    private static void EnsureSelector(string triggerName, string triggerDescription)
+    {
+        AgentCardSelector.SetTrigger(triggerName, triggerDescription);
+        if (!AgentCardSelector.HasScope)
+        {
+            var selector = new AgentCardSelector(triggerName, triggerDescription);
+            AgentCardSelector.SetSelectorScope(CardSelectCmd.PushSelector(selector));
+        }
+    }
+
     private static string PlayCard(CombatActionRequest request, Player player,
         PlayerCombatState playerCombat, ICombatState combatState)
     {
+        if (AgentCardSelector.Pending is not null)
+            return Error("A card selection is pending — resolve it with select_hand_card first.");
+
         if (!IsPlayPhase())
             return Error("Not in play phase.");
 
@@ -189,13 +210,12 @@ public static class CombatActionHandler
             target = enemies[targetIndex];
         }
 
-        // Always push a blocking card selector so that if the card triggers
-        // a selection (e.g. Armaments upgrade, Acrobatics discard), the game
-        // blocks until the agent responds via select_hand_card.
+        // Keep the blocking card selector installed so that if the card
+        // triggers a selection (e.g. Armaments upgrade, Photon Cut's
+        // put-back), the game blocks until the agent responds via
+        // select_hand_card — no matter how late the selection fires.
         var cardInfo = CombatHandler.BuildCardInfo(card);
-        var selector = new AgentCardSelector(cardInfo.Name, cardInfo.Description);
-        var selectorScope = CardSelectCmd.PushSelector(selector);
-        AgentCardSelector.SetSelectorScope(selectorScope);
+        EnsureSelector(cardInfo.Name, cardInfo.Description);
 
         var action = new PlayCardAction(card, target);
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
@@ -222,15 +242,16 @@ public static class CombatActionHandler
 
     private static string EndTurn(Player player)
     {
+        if (AgentCardSelector.Pending is not null)
+            return Error("A card selection is pending — resolve it with select_hand_card first.");
+
         if (!IsPlayPhase())
             return Error("Not in play phase.");
 
         // End-of-turn powers (e.g. Well-Laid Plans retain) can trigger a card
-        // selection. Push an AgentCardSelector scope so the prompt is captured
-        // and surfaced as `hand_select` instead of stalling the game UI.
-        var selector = new AgentCardSelector("End of turn", "End-of-turn card selection.");
-        var selectorScope = CardSelectCmd.PushSelector(selector);
-        AgentCardSelector.SetSelectorScope(selectorScope);
+        // selection — keep the selector installed so it's captured and
+        // surfaced as `hand_select` instead of stalling the game UI.
+        EnsureSelector("End of turn", "End-of-turn card selection.");
 
         PlayerCmd.EndTurn(player, canBackOut: false);
 
@@ -239,6 +260,9 @@ public static class CombatActionHandler
 
     private static string UsePotion(CombatActionRequest request, Player player, ICombatState combatState)
     {
+        if (AgentCardSelector.Pending is not null)
+            return Error("A card selection is pending — resolve it with select_hand_card first.");
+
         if (!IsPlayPhase())
             return Error("Not in play phase.");
 
@@ -274,6 +298,11 @@ public static class CombatActionHandler
         {
             target = player.Creature;
         }
+
+        // Potions can trigger hand selections too (discard/choose effects) —
+        // same persistent-selector treatment as cards.
+        EnsureSelector(potion.Title?.GetFormattedText() ?? potion.Id.ToString(),
+                       "Potion effect card selection.");
 
         potion.EnqueueManualUse(target);
 

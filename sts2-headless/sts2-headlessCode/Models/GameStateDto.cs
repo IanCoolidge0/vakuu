@@ -160,6 +160,8 @@ public record CombatStateResponse
     [JsonPropertyName("turn")] public int Turn { get; init; }
     [JsonPropertyName("energy")] public int Energy { get; init; }
     [JsonPropertyName("max_energy")] public int MaxEnergy { get; init; }
+    // Current Stars (Regent resource; generated/spent, no max).
+    [JsonPropertyName("stars")] public int Stars { get; init; }
     [JsonPropertyName("player")] public CombatPlayerInfo Player { get; init; } = new();
     [JsonPropertyName("enemies")] public List<EnemyInfo> Enemies { get; init; } = [];
     [JsonPropertyName("hand")] public List<CardInfo> Hand { get; init; } = [];
@@ -222,6 +224,9 @@ public record CardInfo
     [JsonPropertyName("type")] public string Type { get; init; } = "";
     [JsonPropertyName("description")] public string Description { get; init; } = "";
     [JsonPropertyName("upgraded")] public bool Upgraded { get; init; }
+    // Star cost (Regent resource). Null = card has no star cost; -1 = X.
+    // Cards can cost both energy and stars.
+    [JsonPropertyName("star_cost")] public int? StarCost { get; init; }
     // Keyword flags (Exhaust, Ethereal, Innate, Retain, Unplayable, …) live
     // in a structured set on CardModel, NOT in the description text — without
     // this field they are invisible to the agent. Includes keywords granted

@@ -19,7 +19,7 @@ from compendium import format_keywords_section
 from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
-    format_card_select, format_hand_select, fmt_cost, clean_desc,
+    format_card_select, format_hand_select, fmt_cost, fmt_card_cost, clean_desc,
     card_tags, card_display_name, ench_definitions_section,
 )
 
@@ -441,7 +441,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             if cards:
                 lines.append(f"\nDeck ({len(cards)} cards):")
                 for c in cards:
-                    lines.append(f"  {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)} - {clean_desc(c['description'])}")
+                    lines.append(f"  {card_display_name(c)} ({fmt_card_cost(c)}) {card_tags(c)} - {clean_desc(c['description'])}")
                 ench_defs = ench_definitions_section(cards)
                 if ench_defs:
                     lines.append(ench_defs)
@@ -658,7 +658,13 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     if check is not None:
                         screen_changed = True
                         turn_ended = check.get("screen") == "combat"
-                elif success and name in ("play_card", "use_potion", "select_hand_card"):
+                elif success and name in ("play_card", "use_potion",
+                                          "select_hand_card", "select_card"):
+                    # select_card is included because choose-type overlays
+                    # (e.g. Colorless Potion) auto-confirm on selection — the
+                    # screen moves on without a confirm_selection. On grid
+                    # overlays (Smith) the screen is stable and this returns
+                    # immediately.
                     check = self._settle_state(timeout=5.0)
                     if check is not None and check.get("screen") != screen:
                         screen_changed = True
@@ -913,7 +919,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     cards = deck.get("cards", [])
                     lines = [f"Deck ({len(cards)} cards):"]
                     for i, c in enumerate(cards):
-                        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)}")
+                        lines.append(f"  [{i}] {card_display_name(c)} ({fmt_card_cost(c)}) {card_tags(c)}")
                     ench_defs = ench_definitions_section(cards)
                     if ench_defs:
                         lines.append("\n" + ench_defs)
@@ -925,7 +931,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     piles = self.client.get_combat_piles()
 
                     def pile_line(c):
-                        return f"  {card_display_name(c)} ({fmt_cost(c['cost'])}) {card_tags(c)}"
+                        return f"  {card_display_name(c)} ({fmt_card_cost(c)}) {card_tags(c)}"
 
                     lines = [f"Draw pile ({piles['draw_pile_count']}):"]
                     for c in piles['draw_pile']:

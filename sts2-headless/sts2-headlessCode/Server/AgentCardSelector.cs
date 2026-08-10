@@ -18,6 +18,12 @@ public class AgentCardSelector : ICardSelector
     private static PendingCardSelection? _pending;
     private static IDisposable? _selectorScope;
 
+    // The most recent agent action, shown as the selection's trigger. The
+    // selector stays installed across actions (see EnsureInstalled), so the
+    // trigger is tracked statically and updated per action.
+    private static string? _currentTriggerName;
+    private static string? _currentTriggerDescription;
+
     public AgentCardSelector(string triggerCardName, string triggerCardDescription)
     {
         _triggerCardName = triggerCardName;
@@ -27,12 +33,24 @@ public class AgentCardSelector : ICardSelector
     /// <summary>The currently pending card selection, or null if none.</summary>
     public static PendingCardSelection? Pending => _pending;
 
+    /// <summary>Whether a selector scope is currently installed.</summary>
+    public static bool HasScope => _selectorScope is not null;
+
+    /// <summary>Record the action about to run so a selection it triggers
+    /// reports the right trigger card.</summary>
+    public static void SetTrigger(string name, string description)
+    {
+        _currentTriggerName = name;
+        _currentTriggerDescription = description;
+    }
+
     public Task<IEnumerable<CardModel>> GetSelectedCards(
         IEnumerable<CardModel> options, int minSelect, int maxSelect)
     {
         var pending = new PendingCardSelection(
             options.ToList(), minSelect, maxSelect,
-            _triggerCardName, _triggerCardDescription);
+            _currentTriggerName ?? _triggerCardName,
+            _currentTriggerDescription ?? _triggerCardDescription);
         _pending = pending;
         return pending.WaitForResponseAsync();
     }
