@@ -48,6 +48,7 @@ class OpenAIProvider(LLMProvider):
             # Reasoning tokens count against this cap, so it needs headroom
             # beyond the visible reply.
             "max_output_tokens": 4096,
+            "reasoning": { "effort": "high" },
             "instructions": self.system_prompt,
             "input": self.messages,
         }

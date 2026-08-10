@@ -156,7 +156,8 @@ def main():
         terse_suffix = "\n\n## Output\nKeep reasoning brief — 1-2 short sentences max, then call the tool."
     else:
         terse_suffix = "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
-    system_prompt = base_prompt if args.verbose else base_prompt + terse_suffix
+    #system_prompt = base_prompt if args.verbose else base_prompt + terse_suffix
+    system_prompt = base_prompt
 
     # Create LLM provider
     if args.provider == "openai":
