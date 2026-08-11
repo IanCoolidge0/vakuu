@@ -30,6 +30,8 @@
 
     <ItemGroup Condition="True"> <!--Allows access to originally private/protected members but may (unlikely to) cause errors.-->
         <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false"/>
+        <!-- Virtual members are excluded above; card description resolution needs this one. -->
+        <Publicize Include="sts2:MegaCrit.Sts2.Core.Models.CardModel.AddExtraArgsToDescription"/>
     </ItemGroup>
 
     <ItemGroup>

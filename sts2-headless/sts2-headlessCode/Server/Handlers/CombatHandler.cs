@@ -5,6 +5,9 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Enchantments;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes;
@@ -172,9 +175,6 @@ public static class CombatHandler
         else if (card.CurrentStarCost >= 0)
             starCost = card.CurrentStarCost;
 
-        var description = card.Description;
-        card.DynamicVars.AddTo(description);
-
         var keywords = card.Keywords
             .Where(k => k != CardKeyword.None)
             .Select(k => k.ToString())
@@ -200,12 +200,46 @@ public static class CombatHandler
             Name = card.TitleLocString?.GetFormattedText() ?? card.Id.ToString(),
             Cost = cost,
             Type = card.Type.ToString().ToLower(),
-            Description = CleanDescription(description?.GetFormattedText() ?? ""),
+            Description = CleanDescription(ResolveDescription(card)),
             Upgraded = card.IsUpgraded,
             StarCost = starCost,
             Keywords = keywords.Count > 0 ? keywords : null,
             Enchantment = enchantment
         };
+    }
+
+    // The visual client never formats CardModel.Description with DynamicVars
+    // alone: NCard first refreshes preview values (Forge-grown damage/repeats,
+    // Parry-scaled Block, Strength/Vulnerable modifiers), and
+    // GetDescriptionForPile() injects context variables (GainsBlock,
+    // TargetType, IfUpgraded, OnTable, …) before running SmartFormat. A
+    // template that references any of them (Sovereign Blade uses GainsBlock
+    // and TargetType) throws on the missing variable, LocManager falls back
+    // to the raw template, and the cleanup regexes then gut it down to
+    // "Deal  damage times. Block.". Mirror the client's setup here instead of
+    // calling GetDescriptionForPile() itself, because that would also append
+    // keyword/enchantment rider lines that CardInfo already carries in
+    // structured fields.
+    private static string ResolveDescription(CardModel card)
+    {
+        card.UpdateDynamicVarPreview(CardPreviewMode.Normal, null, card.DynamicVars);
+
+        var description = card.Description;
+        card.DynamicVars.AddTo(description);
+        card.AddExtraArgsToDescription(description);
+
+        var pileType = card.Pile?.Type ?? PileType.None;
+        description.Add(new IfUpgradedVar(card.IsUpgraded ? UpgradeDisplay.Upgraded : UpgradeDisplay.Normal));
+        description.Add("OnTable", pileType is PileType.Hand or PileType.Play);
+        description.Add("InCombat", CombatManager.Instance.IsInProgress && (card.Pile?.IsCombatPile ?? false));
+        description.Add("IsTargeting", false);
+        description.Add("TargetType", card.TargetType.ToString());
+        description.Add("GainsBlock", card.GainsBlock);
+        description.Add("IsOstyAlive", card.IsMutable && (card.Owner?.IsOstyAlive ?? false));
+        description.Add("energyPrefix", EnergyIconHelper.GetPrefix(card));
+        description.Add("singleStarIcon", "[img]res://images/packed/sprite_fonts/star_icon.png[/img]");
+
+        return description.GetFormattedText() ?? "";
     }
 
     private static List<PowerInfo> BuildPowerList(Creature creature)
