@@ -118,11 +118,17 @@ public static class StateHandler
     private static string DetectScreen(MegaCrit.Sts2.Core.Runs.RunState state, NRun run)
     {
         // Check for pending in-combat card selection (e.g. Armaments, Acrobatics)
-        if (AgentCardSelector.Pending is not null)
+        bool combatInProgress = MegaCrit.Sts2.Core.Combat.CombatManager.Instance?.IsInProgress == true;
+        if (AgentCardSelector.Pending is not null && combatInProgress)
+            return "hand_select";
+
+        // Once combat is over the selector must come off CardSelectCmd's
+        // stack even when no selection is pending: left installed, it
+        // intercepts the next out-of-combat selection (rest-site Smith, shop
+        // removal, event enchant), which then dies silently — no screen ever
+        // opens and the intercepted selection gets cancelled as stale.
+        if (!combatInProgress && (AgentCardSelector.HasScope || AgentCardSelector.Pending is not null))
         {
-            if (MegaCrit.Sts2.Core.Combat.CombatManager.Instance?.IsInProgress == true)
-                return "hand_select";
-            // Stale pending from ended combat — clean up
             AgentCardSelector.Cancel();
             AgentCardSelector.CleanupScope();
         }

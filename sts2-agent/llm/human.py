@@ -125,7 +125,7 @@ class HumanProvider(LLMProvider):
 
     def __init__(self, model: str = "human", system_prompt: str = "",
                  api_key: str | None = None):
-        super().__init__(model, system_prompt)
+        super().__init__(model, system_prompt, "")
         self.last_usage: dict | None = None
         self._counter = 0
 
