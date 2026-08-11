@@ -496,13 +496,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             reason = self._pending_reason
             self._pending_results = None
             self._pending_reason = None
-            if reason == "turn_ended":
-                preamble = ("Your turn ended and the enemies have acted. "
-                            "Here is the new turn:\n\n")
-            else:
-                preamble = (f"The game transitioned to a new screen ({screen}). "
-                            "Act on the new screen using its tools:\n\n")
-            full_prompt = preamble + prompt
+            full_prompt = prompt
             if self.logger:
                 self.logger.prompt(full_prompt)
             try:

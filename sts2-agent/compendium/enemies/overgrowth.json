@@ -232,20 +232,17 @@
       "hp": "65",
       "a8_hp": "70",
       "powers": [
-        "13 starting Block",
         "1 Artifact (negates first debuff)"
       ],
       "moves": [
         "Charge Up — gains 2 Strength",
         "Repeater Blast — 7 dmg, gains 2 Strength",
-        "Expel Blast — 5 dmg × 2",
-        "Submerge — gains 15 Block"
+        "Expel Blast — 5 dmg × 2"
       ],
       "a9_moves": [
         "Charge Up — gains 2 Strength",
         "Repeater Blast — 8 dmg, gains 2 Strength",
-        "Expel Blast — 6 dmg × 2",
-        "Submerge — gains 15 Block"
+        "Expel Blast — 6 dmg × 2"
       ],
       "pattern": "Opens with Charge Up, then cycles Repeater → Repeater → Expel Blast."
     },

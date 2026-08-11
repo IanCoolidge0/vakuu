@@ -1,0 +1,584 @@
+{
+  "_meta": {
+    "source": "https://slaythespire.wiki.gg/wiki/Slay_the_Spire_2:Glory",
+    "note": "Glory is Act 3. Ascension variants are stored in fields prefixed with the ascension level (e.g. a8_hp, a9_moves). Prefixed move lists are FULL replacement lists, not diffs. In Glory, HP scales at A8; attack damage, hit counts and Strength gains scale at A9. Block is the exception and must be read per-enemy: Axebot (Boot Up) and Magi Knight (Power Shield, Prep) scale Block at A8 — these two therefore carry BOTH a8_moves and a9_moves, and their a9_moves lists already include the A8 Block value. Frog Knight's innate Plating also scales at A8 (15 → 19). Test Subject's innate Enrage scales at A9 (2 → 3). Several values have no ascension scaling at all: Owl Magistrate Peck Assault (4 dmg × 6), Torch Head Amalgam Beam (8 dmg × 3), Test Subject Phase 3 Big Pounce (45 dmg), Mecha Knight Windup (15 Block, 5 Strength), Guardbot Guard (15 Block), The Forgotten Miasma (8 Block, 2 Dexterity), Queen Burn Bright for Me (20 Block), Aeonglass Ebb Block (33), Living Shield Shield Slam (6 dmg), and every flat Strength gain. All numbers are taken from Module:Enemies/StS2_data/Glory, Module:Enemies/StS2_data/Elites, Module:Enemies/StS2_data/Bosses, and (for the two returning constructs) Module:Enemies/StS2_data/Underdocks and Module:Enemies/StS2_data/Overgrowth; where a rendered page disagreed with a module on the ascension level, the module was used.",
+    "summons": {
+      "Fabricator": [
+        "Guardbot",
+        "Noisebot",
+        "Zapbot",
+        "Stabbot"
+      ],
+      "Axebot": [
+        "Axebot"
+      ]
+    },
+    "missing": [
+      "Slay_the_Spire_2:Punch_Construct — no Glory-specific data entry exists; it debuts in the Underdocks and is reused in Glory's Punch Construct + 2 Cubex Construct encounter. All stats taken from Module:Enemies/StS2_data/Underdocks; recorded here with act 3.",
+      "Key collision warning: 'Punch Construct' and 'Cubex Construct' also exist in underdocks.json and overgrowth.json. compendium/__init__.py merges all act files flat with dict.update() in sorted filename order, so glory.json loses to both. Stats agree in all colliding entries (overgrowth.json's Cubex Construct previously carried a fabricated 'Submerge' move and starting Block, corrected 2026-08-11 against Module:Enemies/StS2_data/Overgrowth), so the collisions only affect the 'act' field.",
+      "Slay_the_Spire_2:Cubex_Construct — debuts in the Overgrowth; all stats taken from Module:Enemies/StS2_data/Overgrowth (its Encounters field explicitly lists the Glory encounter). Both the module and the rendered page list exactly three moves and Artifact 1 with no starting Block; a 'Submerge / gains 15 Block' move that appears in some third-party summaries (and in this repo's overgrowth.json) is NOT in either source and was omitted.",
+      "Owl Magistrate 'Judicial Flight' — the module text is only 'Gains Soar' with no stack amount, and the Soar power text carries no number; no numeric value recorded.",
+      "Test Subject (Phase 2) 'Painful Stabs' — the module's StartsWith lists the power with no numeric stack, and the power text is 'Shuffle X Wounds into your Discard Pile...'; X is undocumented.",
+      "Test Subject phases are keyed as the Bosses module names them ('Test Subject', 'Test Subject (Phase 2)', 'Test Subject (Phase 3)'). The in-game display name during phases 2 and 3 may simply be 'Test Subject' — a human should confirm before relying on exact-name lookup.",
+      "'Knight Gang' exists as a top-level key in Module:Enemies/StS2_data/Elites but is a group container with no BaseHP, AscHP or Intents. It is recorded as the `group` field on Flail Knight, Spectral Knight and Magi Knight rather than as its own entry.",
+      "'Doormaker' is still present in Module:Enemies/StS2_data/Bosses with Debut = Glory, but the Glory page's update history states 'Aeonglass replaces the Doormaker boss enemy' and the page's boss list omits it. Excluded from this file as no longer in the roster — a human should confirm.",
+      "Torch Head Amalgam is typed Minion and has the Minion power, but it is not summoned — it starts the encounter alongside the Queen (InPartyWith). It therefore has no `summoned_by` field and does not appear in _meta.summons.",
+      "Module:Enemies/StS2_data/Elites lists no Encounters or InPartyWith data for Mecha Knight or Soul Nexus, and no Encounters data for Mecha Knight's ascension pairing; nothing was inferred.",
+      "Keyword sources: 'Bound' has no standalone page (404) and is absent from Module:Powers/StS2_data/Debuff and /Common — its text was taken from Slay_the_Spire_2:Queen. 'Galvanized' is likewise absent from the Powers modules — its text and the 'damage resolves after the Power and can be blocked' note were taken from Slay_the_Spire_2:Globe_Head.",
+      "Rendered pages repeatedly label Glory's damage/Strength scaling as Ascension 8 (Devoted Sculptor Savage, Slimed Berserker Furious Pummeling/Smother, Soul Nexus, The Lost/The Forgotten, Test Subject) while the data modules encode {{Asc|9|...}}. The modules were used throughout."
+    ]
+  },
+  "enemies": {
+    "Devoted Sculptor": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "162",
+      "a8_hp": "172",
+      "moves": [
+        "Forbidden Incantation — gains 9 Ritual (at the end of each of its turns it gains 9 Strength)",
+        "Savage — 12 dmg"
+      ],
+      "a9_moves": [
+        "Forbidden Incantation — gains 9 Ritual (at the end of each of its turns it gains 9 Strength)",
+        "Savage — 15 dmg"
+      ],
+      "pattern": "Always opens with Forbidden Incantation, then uses Savage every turn afterward."
+    },
+    "Scroll of Biting": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "31-38",
+      "a8_hp": "32-39",
+      "powers": [
+        "Paper Cuts 2 — whenever it deals unblocked attack damage to you, you lose 2 Max HP"
+      ],
+      "moves": [
+        "Chomp — 14 dmg",
+        "More Teeth — gains 2 Strength",
+        "Chew — 5 dmg × 2"
+      ],
+      "a9_moves": [
+        "Chomp — 16 dmg",
+        "More Teeth — gains 2 Strength",
+        "Chew — 6 dmg × 2"
+      ],
+      "pattern": "Base cycle Chomp → More Teeth → Chew; each Scroll of Biting starts on a different move in the cycle. After Chew it randomly picks either Chomp (cannot repeat) or Chew (weight 2), then continues the cycle from that point."
+    },
+    "Axebot": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "70-78",
+      "a8_hp": "78-86",
+      "powers": [
+        "Stock 2 — when killed, a new Axebot is summoned in its place; triggers up to 2 times"
+      ],
+      "moves": [
+        "Boot Up — gains 10 Block and 3 Strength (the second Stock respawn's version gains 6 Strength instead)",
+        "The One-Two — 9 dmg × 2",
+        "Hammer Uppercut — 12 dmg + applies 2 Weak and 2 Frail"
+      ],
+      "a8_moves": [
+        "Boot Up — gains 15 Block and 3 Strength (the second Stock respawn's version gains 6 Strength instead)",
+        "The One-Two — 9 dmg × 2",
+        "Hammer Uppercut — 12 dmg + applies 2 Weak and 2 Frail"
+      ],
+      "a9_moves": [
+        "Boot Up — gains 15 Block and 4 Strength (the second Stock respawn's version gains 8 Strength instead)",
+        "The One-Two — 10 dmg × 2",
+        "Hammer Uppercut — 14 dmg + applies 2 Weak and 2 Frail"
+      ],
+      "pattern": "The Axebot that starts the fight does not use Boot Up: it cycles Hammer Uppercut → The One-Two, repeating. An Axebot respawned by Stock opens with Boot Up before entering that cycle, and the second respawned Axebot uses the stronger Boot Up variant."
+    },
+    "Fabricator": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "150",
+      "a8_hp": "155",
+      "moves": [
+        "Fabricate — summons 1 defensive bot (Guardbot or Noisebot) and 1 aggressive bot (Zapbot or Stabbot)",
+        "Fabricating Strike — 18 dmg + summons 1 aggressive bot (Zapbot or Stabbot)",
+        "Disintegrate — 11 dmg"
+      ],
+      "a9_moves": [
+        "Fabricate — summons 1 defensive bot (Guardbot or Noisebot) and 1 aggressive bot (Zapbot or Stabbot)",
+        "Fabricating Strike — 21 dmg + summons 1 aggressive bot (Zapbot or Stabbot)",
+        "Disintegrate — 13 dmg"
+      ],
+      "pattern": "Each turn it checks its living ally count. With fewer than 4 living allies it randomly uses Fabricate or Fabricating Strike (equal weight); with 4 or more allies it uses Disintegrate instead. It avoids summoning the same bot consecutively."
+    },
+    "Zapbot": {
+      "tier": "minion",
+      "act": 3,
+      "summoned_by": "Fabricator (aggressive bot, via Fabricate or Fabricating Strike)",
+      "hp": "18-23",
+      "a8_hp": "19-24",
+      "powers": [
+        "High Voltage 2 — at the start of its turn it gains 2 Strength"
+      ],
+      "moves": [
+        "Zap — 14 dmg"
+      ],
+      "a9_moves": [
+        "Zap — 15 dmg"
+      ],
+      "pattern": "Uses Zap every turn."
+    },
+    "Stabbot": {
+      "tier": "minion",
+      "act": 3,
+      "summoned_by": "Fabricator (aggressive bot, via Fabricate or Fabricating Strike)",
+      "hp": "18-23",
+      "a8_hp": "19-24",
+      "moves": [
+        "Stab — 11 dmg + applies 1 Frail"
+      ],
+      "a9_moves": [
+        "Stab — 12 dmg + applies 1 Frail"
+      ],
+      "pattern": "Uses Stab every turn."
+    },
+    "Guardbot": {
+      "tier": "minion",
+      "act": 3,
+      "summoned_by": "Fabricator (defensive bot, via Fabricate)",
+      "hp": "16-20",
+      "a8_hp": "17-21",
+      "moves": [
+        "Guard — gives the Fabricator 15 Block"
+      ],
+      "pattern": "Uses Guard every turn."
+    },
+    "Noisebot": {
+      "tier": "minion",
+      "act": 3,
+      "summoned_by": "Fabricator (defensive bot, via Fabricate)",
+      "hp": "18-23",
+      "a8_hp": "19-24",
+      "moves": [
+        "Noise — shuffles 2 Dazed into your draw and discard piles"
+      ],
+      "pattern": "Uses Noise every turn."
+    },
+    "Frog Knight": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "191",
+      "a8_hp": "199",
+      "powers": [
+        "Plating 15 (19 at A8) — at the end of your turn it gains that much Block; Plating is reduced by 1 at the start of your turn"
+      ],
+      "moves": [
+        "Tongue Lash — 13 dmg + applies 2 Frail",
+        "Strike Down Evil — 21 dmg",
+        "For the Queen — gains 5 Strength",
+        "Beetle Charge — 35 dmg"
+      ],
+      "a9_moves": [
+        "Tongue Lash — 14 dmg + applies 2 Frail",
+        "Strike Down Evil — 23 dmg",
+        "For the Queen — gains 5 Strength",
+        "Beetle Charge — 40 dmg"
+      ],
+      "pattern": "Opens with Tongue Lash, then repeats the cycle Strike Down Evil → For the Queen → a conditional check. At the check: if its HP is below half and it has not yet used Beetle Charge, it uses Beetle Charge once and then continues with Tongue Lash; otherwise it uses Tongue Lash and continues the cycle. Beetle Charge is used at most once per fight."
+    },
+    "Globe Head": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "148",
+      "a8_hp": "158",
+      "powers": [
+        "Galvanic 6 — your Power cards are afflicted with Galvanized: playing one deals 6 damage to you after that Power's effects have resolved, and that damage can be prevented with Block"
+      ],
+      "moves": [
+        "Shocking Slap — 13 dmg + applies 2 Frail",
+        "Thunder Strike — 6 dmg × 3",
+        "Galvanic Burst — 16 dmg + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Shocking Slap — 14 dmg + applies 2 Frail",
+        "Thunder Strike — 7 dmg × 3",
+        "Galvanic Burst — 17 dmg + gains 2 Strength"
+      ],
+      "pattern": "Fixed cycle Shocking Slap → Thunder Strike → Galvanic Burst, repeating."
+    },
+    "Owl Magistrate": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "234",
+      "a8_hp": "243",
+      "moves": [
+        "Magistrate Scrutiny — 16 dmg",
+        "Peck Assault — 4 dmg × 6",
+        "Judicial Flight — gains Soar (receives 50% less attack damage until it lands)",
+        "Verdict — 33 dmg + applies 4 Vulnerable, removes Soar"
+      ],
+      "a9_moves": [
+        "Magistrate Scrutiny — 17 dmg",
+        "Peck Assault — 4 dmg × 6",
+        "Judicial Flight — gains Soar (receives 50% less attack damage until it lands)",
+        "Verdict — 36 dmg + applies 4 Vulnerable, removes Soar"
+      ],
+      "pattern": "Fixed 4-move cycle Magistrate Scrutiny → Peck Assault → Judicial Flight → Verdict, repeating. Soar is therefore active only for the single turn between Judicial Flight and Verdict."
+    },
+    "Slimed Berserker": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "266",
+      "a8_hp": "276",
+      "moves": [
+        "Vomit Ichor — shuffles 10 Slimed into your discard pile",
+        "Furious Pummeling — 4 dmg × 4",
+        "Leeching Hug — applies 3 Weak + gains 3 Strength",
+        "Smother — 30 dmg"
+      ],
+      "a9_moves": [
+        "Vomit Ichor — shuffles 10 Slimed into your discard pile",
+        "Furious Pummeling — 5 dmg × 4",
+        "Leeching Hug — applies 3 Weak + gains 3 Strength",
+        "Smother — 33 dmg"
+      ],
+      "pattern": "Fixed 4-move cycle Vomit Ichor → Furious Pummeling → Leeching Hug → Smother, repeating."
+    },
+    "Living Shield": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "55",
+      "a8_hp": "65",
+      "powers": [
+        "Rampart 25 — at the start of the player's turn, the Turret Operator gains 25 Block"
+      ],
+      "moves": [
+        "Shield Slam — 6 dmg",
+        "Smash — 16 dmg + gains 3 Strength"
+      ],
+      "a9_moves": [
+        "Shield Slam — 6 dmg",
+        "Smash — 18 dmg + gains 3 Strength"
+      ],
+      "pattern": "Uses Shield Slam every turn while the Turret Operator is alive; once the Turret Operator is killed it uses Smash every turn."
+    },
+    "Turret Operator": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "41",
+      "a8_hp": "51",
+      "moves": [
+        "Unload! — 3 dmg × 5",
+        "Loading — gains 1 Strength"
+      ],
+      "a9_moves": [
+        "Unload! — 4 dmg × 5",
+        "Loading — gains 1 Strength"
+      ],
+      "pattern": "Fixed 3-move cycle Unload! → Unload! → Loading, repeating."
+    },
+    "The Lost": {
+      "tier": "regular",
+      "act": 3,
+      "group": "The Lost and Forgotten",
+      "hp": "93",
+      "a8_hp": "99",
+      "powers": [
+        "Possess Strength — when killed, returns all stolen Strength to the player"
+      ],
+      "moves": [
+        "Debilitating Smog — removes 2 Strength from the player and gains 2 Strength",
+        "Eye Lasers — 4 dmg × 2"
+      ],
+      "a9_moves": [
+        "Debilitating Smog — removes 2 Strength from the player and gains 2 Strength",
+        "Eye Lasers — 5 dmg × 2"
+      ],
+      "pattern": "Alternates Debilitating Smog ↔ Eye Lasers, starting with Debilitating Smog."
+    },
+    "The Forgotten": {
+      "tier": "regular",
+      "act": 3,
+      "group": "The Lost and Forgotten",
+      "hp": "106",
+      "a8_hp": "111",
+      "powers": [
+        "Possess Speed — when killed, returns all stolen Dexterity to the player"
+      ],
+      "moves": [
+        "Miasma — removes 2 Dexterity from the player, gains 8 Block and 2 Dexterity",
+        "Dread — 13 dmg plus the amount of Dexterity the Forgotten has"
+      ],
+      "a9_moves": [
+        "Miasma — removes 2 Dexterity from the player, gains 8 Block and 2 Dexterity",
+        "Dread — 15 dmg plus the amount of Dexterity the Forgotten has"
+      ],
+      "pattern": "Alternates Miasma ↔ Dread, starting with Miasma."
+    },
+    "Punch Construct": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "55",
+      "a8_hp": "60",
+      "powers": [
+        "Artifact 1 — negates the first debuff applied to it"
+      ],
+      "moves": [
+        "READY — gains 10 Block",
+        "Fast Punch — 5 dmg × 2 + applies 1 Frail",
+        "Strong Punch — 14 dmg"
+      ],
+      "a9_moves": [
+        "READY — gains 10 Block",
+        "Fast Punch — 6 dmg × 2 + applies 1 Frail",
+        "Strong Punch — 16 dmg"
+      ],
+      "pattern": "Fixed cycle READY → Fast Punch → Strong Punch, repeating."
+    },
+    "Cubex Construct": {
+      "tier": "regular",
+      "act": 3,
+      "hp": "65",
+      "a8_hp": "70",
+      "powers": [
+        "Artifact 1 — negates the first debuff applied to it"
+      ],
+      "moves": [
+        "Charge Up — gains 2 Strength",
+        "Repeater Blast — 7 dmg + gains 2 Strength",
+        "Expel Blast — 5 dmg × 2"
+      ],
+      "a9_moves": [
+        "Charge Up — gains 2 Strength",
+        "Repeater Blast — 8 dmg + gains 2 Strength",
+        "Expel Blast — 6 dmg × 2"
+      ],
+      "pattern": "Opens with Charge Up, then repeats Repeater Blast → Repeater Blast → Expel Blast for the remainder of the fight."
+    },
+    "Flail Knight": {
+      "tier": "elite",
+      "act": 3,
+      "group": "Knight Gang",
+      "hp": "101",
+      "a8_hp": "108",
+      "moves": [
+        "Breaker — gains 3 Strength",
+        "Flail — 9 dmg × 2",
+        "Ram — 15 dmg"
+      ],
+      "a9_moves": [
+        "Breaker — gains 3 Strength",
+        "Flail — 10 dmg × 2",
+        "Ram — 17 dmg"
+      ],
+      "pattern": "Opens with Ram, then each turn randomly uses Breaker, Flail or Ram. Breaker cannot be used two turns in a row."
+    },
+    "Spectral Knight": {
+      "tier": "elite",
+      "act": 3,
+      "group": "Knight Gang",
+      "hp": "93",
+      "a8_hp": "97",
+      "moves": [
+        "Hex — applies 2 Hex (while Spectral Knight is alive, ALL your cards are Ethereal)",
+        "Soul Slash — 15 dmg",
+        "Soul Flame — 3 dmg × 3"
+      ],
+      "a9_moves": [
+        "Hex — applies 2 Hex (while Spectral Knight is alive, ALL your cards are Ethereal)",
+        "Soul Slash — 17 dmg",
+        "Soul Flame — 4 dmg × 3"
+      ],
+      "pattern": "Opens with Hex, then alternates Soul Slash ↔ Soul Flame."
+    },
+    "Magi Knight": {
+      "tier": "elite",
+      "act": 3,
+      "group": "Knight Gang",
+      "hp": "82",
+      "a8_hp": "89",
+      "moves": [
+        "Power Shield — 6 dmg + gains 5 Block",
+        "Dampen — applies Dampen (while Magi Knight is alive, ALL your cards are Downgraded)",
+        "Ram — 10 dmg",
+        "Prep — gains 5 Block",
+        "Magic Bomb — 35 dmg"
+      ],
+      "a8_moves": [
+        "Power Shield — 6 dmg + gains 9 Block",
+        "Dampen — applies Dampen (while Magi Knight is alive, ALL your cards are Downgraded)",
+        "Ram — 10 dmg",
+        "Prep — gains 9 Block",
+        "Magic Bomb — 35 dmg"
+      ],
+      "a9_moves": [
+        "Power Shield — 7 dmg + gains 9 Block",
+        "Dampen — applies Dampen (while Magi Knight is alive, ALL your cards are Downgraded)",
+        "Ram — 11 dmg",
+        "Prep — gains 9 Block",
+        "Magic Bomb — 40 dmg"
+      ],
+      "pattern": "Opens with Power Shield, then Dampen, then repeats Ram → Prep → Magic Bomb in that order."
+    },
+    "Mecha Knight": {
+      "tier": "elite",
+      "act": 3,
+      "hp": "300",
+      "a8_hp": "320",
+      "powers": [
+        "Artifact 3 — negates the first 3 debuffs applied to it"
+      ],
+      "moves": [
+        "Charge — 25 dmg",
+        "Flamethrower — shuffles 4 Burn into your hand",
+        "Windup — gains 15 Block and 5 Strength",
+        "Heavy Cleave — 35 dmg"
+      ],
+      "a9_moves": [
+        "Charge — 30 dmg",
+        "Flamethrower — shuffles 4 Burn into your hand",
+        "Windup — gains 15 Block and 5 Strength",
+        "Heavy Cleave — 40 dmg"
+      ],
+      "pattern": "Starts with Charge, then repeats Flamethrower → Windup → Heavy Cleave for the rest of combat. Charge is used only on turn 1."
+    },
+    "Soul Nexus": {
+      "tier": "elite",
+      "act": 3,
+      "hp": "234",
+      "a8_hp": "254",
+      "moves": [
+        "Soul Burn — 29 dmg",
+        "Maelstrom — 6 dmg × 4",
+        "Drain Life — 18 dmg + applies 2 Vulnerable and 2 Weak"
+      ],
+      "a9_moves": [
+        "Soul Burn — 31 dmg",
+        "Maelstrom — 7 dmg × 4",
+        "Drain Life — 19 dmg + applies 2 Vulnerable and 2 Weak"
+      ],
+      "pattern": "Opens with Soul Burn, then each turn randomly picks Soul Burn, Maelstrom or Drain Life with equal weight. No move can be used two turns in a row."
+    },
+    "Queen": {
+      "tier": "boss",
+      "act": 3,
+      "hp": "400",
+      "a8_hp": "419",
+      "moves": [
+        "Puppet Strings — applies 3 Chains of Binding to all players (the first 3 cards drawn each turn are afflicted with Bound; only 1 Bound card can be played per turn, and cards are un-Bound at end of turn)",
+        "You're Mine — applies 99 Frail, 99 Weak and 99 Vulnerable to all players",
+        "Burn Bright for Me — gives 1 Strength to the Torch Head Amalgam + gains 20 Block",
+        "Off with Your Head — 3 dmg × 5",
+        "Execution — 15 dmg",
+        "Enrage — gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Puppet Strings — applies 3 Chains of Binding to all players (the first 3 cards drawn each turn are afflicted with Bound; only 1 Bound card can be played per turn, and cards are un-Bound at end of turn)",
+        "You're Mine — applies 99 Frail, 99 Weak and 99 Vulnerable to all players",
+        "Burn Bright for Me — gives 1 Strength to the Torch Head Amalgam + gains 20 Block",
+        "Off with Your Head — 4 dmg × 5",
+        "Execution — 18 dmg",
+        "Enrage — gains 2 Strength"
+      ],
+      "pattern": "Always opens Puppet Strings → You're Mine. While the Torch Head Amalgam is alive she then repeats Burn Bright for Me every turn. When the Amalgam dies she switches from Burn Bright for Me to Enrage, then loops Off with Your Head → Execution → Enrage. If the Amalgam dies after its turn (for example to Doom) she switches straight to Off with Your Head, skipping that Enrage. If the Amalgam is killed on turn 2 or earlier she does not use Enrage on her first cycle. Notes on Bound: once a Bound card has been played, other Bound cards cannot be played that turn even via effects like Sly or a Duplicator; Bound cards duplicated by effects such as Music Box or Dual Wield are also Bound; transforming a Bound card during battle removes Bound from it; retaining a card makes it lose Bound; a Bound card that is played and then returned to hand still cannot be played again until end of turn."
+    },
+    "Torch Head Amalgam": {
+      "tier": "minion",
+      "act": 3,
+      "hp": "199",
+      "a8_hp": "211",
+      "powers": [
+        "Minion — abandons combat without its leader"
+      ],
+      "moves": [
+        "Strong Tackle — 26 dmg",
+        "Tackle — 18 dmg",
+        "Beam — 8 dmg × 3",
+        "Weak Tackle — 14 dmg"
+      ],
+      "a9_moves": [
+        "Strong Tackle — 32 dmg",
+        "Tackle — 22 dmg",
+        "Beam — 8 dmg × 3",
+        "Weak Tackle — 16 dmg"
+      ],
+      "pattern": "Fixed sequence Strong Tackle → Tackle → Beam → Weak Tackle → Weak Tackle, then loops back to Beam and repeats Beam → Weak Tackle → Weak Tackle for the rest of the fight. Strong Tackle and Tackle are used only once each, on turns 1 and 2."
+    },
+    "Test Subject": {
+      "tier": "boss",
+      "act": 3,
+      "hp": "100",
+      "a8_hp": "111",
+      "powers": [
+        "Adaptable — when it would be defeated, it instead revives even stronger",
+        "Enrage 2 — whenever you play a Skill, it gains 2 Strength"
+      ],
+      "a9_powers": [
+        "Adaptable — when it would be defeated, it instead revives even stronger",
+        "Enrage 3 — whenever you play a Skill, it gains 3 Strength"
+      ],
+      "moves": [
+        "Bite — 20 dmg",
+        "Skull Bash — 14 dmg + applies 1 Vulnerable"
+      ],
+      "a9_moves": [
+        "Bite — 22 dmg",
+        "Skull Bash — 16 dmg + applies 1 Vulnerable"
+      ],
+      "pattern": "Phase 1. Alternates Bite ↔ Skull Bash, starting with Bite. At 0 HP Adaptable prevents death and it revives into Phase 2 (see 'Test Subject (Phase 2)') at full Phase 2 HP."
+    },
+    "Test Subject (Phase 2)": {
+      "tier": "boss",
+      "act": 3,
+      "hp": "200",
+      "a8_hp": "212",
+      "powers": [
+        "Adaptable — when it would be defeated, it instead revives even stronger",
+        "Painful Stabs — shuffles Wounds into your discard pile each time you receive unblocked attack damage"
+      ],
+      "moves": [
+        "Multi-Claw — 10 dmg × 3 (gains +1 hit each use)"
+      ],
+      "a9_moves": [
+        "Multi-Claw — 11 dmg × 3 (gains +1 hit each use)"
+      ],
+      "pattern": "Phase 2. Uses Multi-Claw every turn. On revival it gains Painful Stabs and loses Enrage. At 0 HP Adaptable prevents death and it revives into Phase 3 (see 'Test Subject (Phase 3)') at full Phase 3 HP."
+    },
+    "Test Subject (Phase 3)": {
+      "tier": "boss",
+      "act": 3,
+      "hp": "300",
+      "a8_hp": "313",
+      "powers": [
+        "Nemesis — at the end of every other turn, gains 1 Intangible"
+      ],
+      "moves": [
+        "Lacerate — 10 dmg × 3",
+        "Big Pounce — 45 dmg",
+        "Burning Growl — shuffles 3 Burn into your discard pile + gains 2 Strength"
+      ],
+      "a9_moves": [
+        "Lacerate — 11 dmg × 3",
+        "Big Pounce — 45 dmg",
+        "Burning Growl — shuffles 5 Burn into your discard pile + gains 3 Strength"
+      ],
+      "pattern": "Phase 3, the final phase. Cycles Lacerate → Big Pounce → Burning Growl, repeating. On revival it gains Nemesis and loses Adaptable and Painful Stabs; death in this phase is permanent."
+    },
+    "Aeonglass": {
+      "tier": "boss",
+      "act": 3,
+      "hp": "512",
+      "a8_hp": "535",
+      "powers": [
+        "Withering Presence — every 6 cards you play, adds a Wither to your hand (Wither: Status, unplayable; at the end of your turn, if it is in your hand, take 3 damage — 6 when upgraded)",
+        "Artifact 3 — negates the first 3 debuffs applied to it"
+      ],
+      "moves": [
+        "Ebb — 22 dmg + gains 33 Block",
+        "Eye Lasers — 11 dmg × 2",
+        "Increasing Intensity — shuffles 1 Wither+X into your discard pile, gains 2 + X Strength, upgrades all your Withers, and Withering Presence now creates Wither+X"
+      ],
+      "a9_moves": [
+        "Ebb — 26 dmg + gains 33 Block",
+        "Eye Lasers — 12 dmg × 2",
+        "Increasing Intensity — shuffles 2 Wither+X into your discard pile, gains 3 + X Strength, upgrades all your Withers, and Withering Presence now creates Wither+X"
+      ],
+      "pattern": "Repeating cycle Ebb → Eye Lasers → Increasing Intensity, from turn 1. X equals the number of times Increasing Intensity has already been used."
+    }
+  }
+}
