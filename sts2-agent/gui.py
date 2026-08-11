@@ -32,6 +32,14 @@ PROVIDERS = {
     "deepseek": {"env": "DEEPSEEK_API_KEY",  "model": "deepseek-chat"},
 }
 
+EFFORT_LEVELS = {
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+}
+
 # Palette — echoes the terminal banner sprite.
 BG        = "#181a26"
 BG_PANEL  = "#1f2233"
@@ -220,15 +228,23 @@ class App:
         self.model_entry = self._entry(panel, self.model_var, width=26)
         self.model_entry.grid(row=0, column=3, padx=(0, 12))
 
-        self._label(panel, "API key").grid(row=0, column=4, sticky="w", padx=(0, 4))
+        self._label(panel, "Effort").grid(row=0, column=4, sticky="w", padx=(0, 4))
+        self.effort_var = tk.StringVar(value="medium")
+        self.effort_box = ttk.Combobox(
+            panel, textvariable=self.effort_var, state="readonly",
+            values=list(EFFORT_LEVELS), width=10, font=self.ui_font)
+        self.effort_box.grid(row=0, column=5, padx=(0, 12))
+        self.effort_box.bind("<<ComboboxSelected>>", self._on_effort_change)
+
+        self._label(panel, "API key").grid(row=1, column=0, sticky="w", padx=(0, 4), pady=(16, 16))
         self.key_var = tk.StringVar()
         self.key_entry = self._entry(panel, self.key_var, width=22, show="•")
-        self.key_entry.grid(row=0, column=5, padx=(0, 8))
+        self.key_entry.grid(row=1, column=1, padx=(0, 8), pady=(4, 4))
         self.key_hint = self._label(panel, "")
-        self.key_hint.grid(row=1, column=4, columnspan=2, sticky="w")
+        self.key_hint.grid(row=1, column=2, columnspan=2, sticky="w")
 
         toggles = tk.Frame(panel, bg=BG_PANEL)
-        toggles.grid(row=1, column=0, columnspan=4, sticky="w", pady=(4, 0))
+        toggles.grid(row=2, column=0, columnspan=4, sticky="w", pady=(4, 0))
         self.tts_var = tk.BooleanVar(value=False)
         self.verbose_var = tk.BooleanVar(value=True)
         self.tts_check = self._check(
@@ -241,7 +257,7 @@ class App:
         self.verbose_check.pack(side="left")
 
         btns = tk.Frame(panel, bg=BG_PANEL)
-        btns.grid(row=1, column=6, sticky="e", padx=(8, 0), pady=(4, 0))
+        btns.grid(row=2, column=6, sticky="e", padx=(8, 0), pady=(4, 0))
         panel.grid_columnconfigure(6, weight=1)
         self.start_btn = self._button(btns, "Start Run", self.start_run,
                                       bg="#2c4a3a", fg=C_GREEN)
@@ -383,9 +399,9 @@ class App:
 
     # --- run control ---
 
-    def _build_cmd(self, provider, model, verbose, tts):
+    def _build_cmd(self, provider, model, effort, verbose, tts):
         cmd = [sys.executable, "-u", os.path.join(SCRIPT_DIR, "main.py"),
-               "--provider", provider, "--model", model]
+               "--provider", provider, "--model", model, "--effort", effort]
         if verbose:
             cmd.append("--verbose")
         if tts:
@@ -397,6 +413,7 @@ class App:
             return
         provider = self.provider_var.get()
         model = self.model_var.get().strip() or PROVIDERS[provider]["model"]
+        effort = self.effort_var.get().strip()
         key = self.key_var.get().strip()
         env_name = PROVIDERS[provider]["env"]
 
@@ -412,7 +429,7 @@ class App:
         env = dict(os.environ, PYTHONUNBUFFERED="1")
         if key:
             env[env_name] = key
-        cmd = self._build_cmd(provider, model,
+        cmd = self._build_cmd(provider, model, effort,
                               self.verbose_var.get(), self.tts_var.get())
         shown = " ".join(os.path.basename(c) if os.path.sep in c else c
                          for c in cmd[2:])
@@ -527,6 +544,9 @@ class App:
         else:
             self.key_hint.config(text=f"{env_name} not set — key required",
                                  fg=C_YELLOW)
+
+    def _on_effort_change(self, event=None):
+        pass
 
     def _on_close(self):
         if self.proc and self.proc.poll() is None:

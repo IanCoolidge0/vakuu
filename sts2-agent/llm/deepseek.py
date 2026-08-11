@@ -6,10 +6,10 @@ from .base import LLMProvider
 
 
 class DeepSeekProvider(LLMProvider):
-    def __init__(self, model: str = "deepseek-chat", system_prompt: str = "",
+    def __init__(self, model: str = "deepseek-chat", system_prompt: str = "", effort: str = "medium",
                  api_key: str | None = None,
                  base_url: str = "https://api.deepseek.com/anthropic"):
-        super().__init__(model, system_prompt)
+        super().__init__(model, system_prompt, effort)
         self.client = anthropic.Anthropic(
             api_key=api_key or os.environ.get("DEEPSEEK_API_KEY"),
             base_url=base_url,
@@ -39,6 +39,7 @@ class DeepSeekProvider(LLMProvider):
         # prompt caching, so we don't attach cache_control markers here.
         kwargs = {
             "model": self.model,
+            "effort": self.effort,
             "max_tokens": 1024,
             "system": self.system_prompt,
             "messages": self.messages,

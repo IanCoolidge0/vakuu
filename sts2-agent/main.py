@@ -99,7 +99,7 @@ def _banner_art(indent="  "):
     return "\n".join(lines)
 
 
-def _start_control_listener(agent, llm, tts, base_prompt, terse_suffix):
+def _start_control_listener(agent, llm, tts, system_prompt):
     """Accept runtime toggles on stdin: `verbose on|off`, `tts on|off`,
     `pause on|off`.
 
@@ -115,7 +115,7 @@ def _start_control_listener(agent, llm, tts, base_prompt, terse_suffix):
             name, on = words[0], words[1] == "on"
             if name == "verbose":
                 agent.verbose = on
-                llm.system_prompt = base_prompt if on else base_prompt + terse_suffix
+                llm.system_prompt = system_prompt
             elif name == "tts":
                 on = tts.set_enabled(on)
             elif name == "pause":
@@ -140,6 +140,8 @@ def main():
                         help="Anthropic API key (or set ANTHROPIC_API_KEY env var)")
     parser.add_argument("--verbose", action="store_true",
                         help="Enable verbose LLM reasoning and agent output")
+    parser.add_argument("--effort", default="medium",
+                        help="Reasoning effort for the LLM. Default 'medium'. Not all models support all effort levels - check with the provider.")
     parser.add_argument("--log-dir", default="logs",
                         help="Directory for session debug logs (default: logs)")
     parser.add_argument("--tts", action="store_true",
@@ -148,27 +150,20 @@ def main():
                         help="Kokoro voice id (default: af_sarah)")
     args = parser.parse_args()
 
-    # Load system prompt. The terse suffix is kept separate so the runtime
-    # verbose toggle (see _start_control_listener) can swap it in and out.
+    # Load system prompt.
     prompt_path = Path(__file__).parent / "prompts" / "system.txt"
-    base_prompt = prompt_path.read_text()
-    if args.provider == "openai":
-        terse_suffix = "\n\n## Output\nKeep reasoning brief — 1-2 short sentences max, then call the tool."
-    else:
-        terse_suffix = "\n\n## Output\nBe terse. No essays. Just call the tool — at most a single short sentence of reasoning if the decision is non-obvious."
-    #system_prompt = base_prompt if args.verbose else base_prompt + terse_suffix
-    system_prompt = base_prompt
+    system_prompt = prompt_path.read_text()
 
     # Create LLM provider
     if args.provider == "openai":
-        llm = OpenAIProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
+        llm = OpenAIProvider(model=args.model, system_prompt=system_prompt, effort=args.effort, api_key=args.api_key)
     elif args.provider == "deepseek":
-        model = args.model if args.model != "claude-sonnet-4-20250514" else "deepseek-chat"
-        llm = DeepSeekProvider(model=model, system_prompt=system_prompt, api_key=args.api_key)
+        model = args.model if args.model != "claude-sonnet-5" else "deepseek-chat"
+        llm = DeepSeekProvider(model=model, system_prompt=system_prompt, effort=args.effort, api_key=args.api_key)
     elif args.provider == "human":
         llm = HumanProvider(model="human", system_prompt=system_prompt)
     else:
-        llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, api_key=args.api_key)
+        llm = ClaudeProvider(model=args.model, system_prompt=system_prompt, effort=args.effort, api_key=args.api_key)
 
     # Create game client
     client = GameClient(base_url=args.url)
@@ -183,7 +178,7 @@ def main():
     # Create and run agent
     agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts)
     if args.provider != "human":
-        _start_control_listener(agent, llm, tts, base_prompt, terse_suffix)
+        _start_control_listener(agent, llm, tts, system_prompt)
 
     CYAN = "\033[36m"
     BOLD = "\033[1m"
@@ -194,7 +189,7 @@ def main():
     print(_banner_art())
     print()
     print(f"  {BOLD}{CYAN}V A K U U{RESET}{DIM}  -  STS2 Benchmark Agent{RESET}")
-    print(f"  {DIM}Model:  {RESET}{args.model}")
+    print(f"  {DIM}Model:  {RESET}{args.model} with {RESET}{args.effort} effort")
     print(f"  {DIM}Server: {RESET}{args.url}")
     print(f"  {DIM}Log:    {RESET}{logger.path}")
     print()

@@ -15,8 +15,9 @@ class Message:
 class LLMProvider(ABC):
     """Abstract interface for LLM providers with tool_use support."""
 
-    def __init__(self, model: str, system_prompt: str):
+    def __init__(self, model: str, system_prompt: str, effort: str):
         self.model = model
+        self.effort = effort
         self.system_prompt = system_prompt
         self.messages: list[dict] = []
 

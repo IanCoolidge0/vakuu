@@ -10,9 +10,9 @@ from .base import LLMProvider
 
 
 class OpenAIProvider(LLMProvider):
-    def __init__(self, model: str = "gpt-4o", system_prompt: str = "",
+    def __init__(self, model: str = "gpt-4o", system_prompt: str = "", effort: str = "medium",
                  api_key: str | None = None):
-        super().__init__(model, system_prompt)
+        super().__init__(model, system_prompt, effort)
         self.client = OpenAI(api_key=api_key)
         self.last_usage: dict | None = None
 
@@ -42,13 +42,12 @@ class OpenAIProvider(LLMProvider):
     def _call(self, tools: list[dict], _retries: int = 2,
               _spent: dict | None = None) -> tuple[str | None, list[dict]]:
         openai_tools = [self._convert_tool(t) for t in tools] if tools else None
-
         kwargs = {
             "model": self.model,
             # Reasoning tokens count against this cap, so it needs headroom
             # beyond the visible reply.
             "max_output_tokens": 4096,
-            "reasoning": { "effort": "high" },
+            "reasoning": { "effort": self.effort },
             "instructions": self.system_prompt,
             "input": self.messages,
         }

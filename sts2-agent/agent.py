@@ -36,7 +36,7 @@ RESET = "\033[0m"
 # Max time the hand-draw animation takes at the start of a turn. A fixed
 # wait, not a poll — mid-animation reads can look complete (plausible count,
 # stable across reads) while cards are still arriving.
-HAND_DRAW_WAIT = 3.0
+HAND_DRAW_WAIT = 2.5
 
 
 class Agent:

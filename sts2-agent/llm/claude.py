@@ -29,9 +29,9 @@ def _with_last_message_cache_marker(messages: list[dict]) -> list[dict]:
 
 
 class ClaudeProvider(LLMProvider):
-    def __init__(self, model: str = "claude-sonnet-4-20250514", system_prompt: str = "",
+    def __init__(self, model: str = "claude-sonnet-4-20250514", system_prompt: str = "", effort: str = "medium",
                  api_key: str | None = None):
-        super().__init__(model, system_prompt)
+        super().__init__(model, system_prompt, effort)
         self.client = anthropic.Anthropic(api_key=api_key)
         self.last_usage: dict | None = None  # {input, output, cache_read, cache_creation}
 
@@ -78,6 +78,7 @@ class ClaudeProvider(LLMProvider):
 
         kwargs = {
             "model": self.model,
+            "effort": self.effort,
             "max_tokens": 1024,
             "system": system_blocks if system_blocks else self.system_prompt,
             "messages": cached_messages,
