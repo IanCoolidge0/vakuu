@@ -78,8 +78,8 @@ class ClaudeProvider(LLMProvider):
 
         kwargs = {
             "model": self.model,
-            "effort": self.effort,
-            "max_tokens": 1024,
+            "output_config": { "effort": self.effort },
+            "max_tokens": 4096,
             "system": system_blocks if system_blocks else self.system_prompt,
             "messages": cached_messages,
         }
