@@ -130,9 +130,11 @@ def format_combat(state: dict, combat: dict) -> str:
         powers = ", ".join(f"{p['name']}({p['amount']})" for p in combat['player']['powers'])
         lines.append(f"Your powers: {powers}")
 
-    # Osty (Necrobinder): shown whenever the character is Necrobinder -
-    # verified, Osty exists iff Necrobinder.
-    if combat['player']['name'] == "The Necrobinder":
+    # Osty (Necrobinder): shown whenever the character is Necrobinder,
+    # or if Osty is verified alive (e.g. due to a cross-character card.)
+    # Flags a false negative if Osty is available but dead on a non-Necrobinder
+    # character, but this is sufficiently rare to ignore.
+    if combat['player']['name'] == "The Necrobinder" or combat['osty']['is_alive']:
         osty = combat['osty']
         if osty['is_alive']:
             lines.append(f"Osty: {osty['hp'] / osty['max_hp']} | Block: {osty['block']}")
