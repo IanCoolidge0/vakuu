@@ -130,6 +130,15 @@ def format_combat(state: dict, combat: dict) -> str:
         powers = ", ".join(f"{p['name']}({p['amount']})" for p in combat['player']['powers'])
         lines.append(f"Your powers: {powers}")
 
+    # Osty (Necrobinder): shown whenever the character is Necrobinder -
+    # verified, Osty exists iff Necrobinder.
+    if combat['player']['name'] == "The Necrobinder":
+        osty = combat['osty']
+        if osty['is_alive']:
+            lines.append(f"Osty: {osty['hp'] / osty['max_hp']} | Block: {osty['block']}")
+        else:
+            lines.append(f"Osty is dead.")
+
     lines.append("")
     lines.append("ENEMIES:")
     for e in combat['enemies']:

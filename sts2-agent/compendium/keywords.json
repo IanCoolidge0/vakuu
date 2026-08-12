@@ -27,7 +27,8 @@
     },
     "Necrobinder": {
       "Doom": "At the end of a creature's turn, if its Doom >= its HP, it dies.",
-      "Summon": "Summoning X summons Osty with X max HP."
+      "Summon": "Summon X summons Osty with X max HP, or adds X to Osty's HP and max HP if already alive.",
+      "Osty": "Necrobinder's pet. Osty absorbs all unblocked attack damage; overflow damage hits you if Osty is killed."
     },
     "Defect": {
       "Channel": "Channeling an Orb puts it into the leftmost empty Orb slot.",

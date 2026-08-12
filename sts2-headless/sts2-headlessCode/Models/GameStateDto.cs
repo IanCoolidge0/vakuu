@@ -163,6 +163,7 @@ public record CombatStateResponse
     // Current Stars (Regent resource; generated/spent, no max).
     [JsonPropertyName("stars")] public int Stars { get; init; }
     [JsonPropertyName("player")] public CombatPlayerInfo Player { get; init; } = new();
+    [JsonPropertyName("osty")] public OstyInfo Osty { get; init; } = new();
     [JsonPropertyName("enemies")] public List<EnemyInfo> Enemies { get; init; } = [];
     [JsonPropertyName("hand")] public List<CardInfo> Hand { get; init; } = [];
     [JsonPropertyName("potions")] public List<PotionSlotInfo> Potions { get; init; } = [];
@@ -179,6 +180,14 @@ public record CombatPlayerInfo
     [JsonPropertyName("max_hp")] public int MaxHp { get; init; }
     [JsonPropertyName("block")] public int Block { get; init; }
     [JsonPropertyName("powers")] public List<PowerInfo> Powers { get; init; } = [];
+}
+
+public record OstyInfo
+{
+    [JsonPropertyName("hp")] public int Hp { get; init; }
+    [JsonPropertyName("max_hp")] public int MaxHp { get; init; }
+    [JsonPropertyName("block")] public int Block { get; init; }
+    [JsonPropertyName("is_alive")] public bool IsAlive { get; init; }
 }
 
 public record EnemyInfo

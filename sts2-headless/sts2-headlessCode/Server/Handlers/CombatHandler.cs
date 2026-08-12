@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Models.Monsters;
 using sts2_headless.sts2_headlessCode.Models;
 
 namespace sts2_headless.sts2_headlessCode.Server.Handlers;
@@ -36,6 +37,8 @@ public static class CombatHandler
         var playerCombat = player.PlayerCombatState;
         if (combatState is null || playerCombat is null)
             return JsonSerializer.Serialize(new { error = "Not in combat" }, JsonOptions);
+
+        var osty = playerCombat.GetPet<Osty>();
 
         var enemies = new List<EnemyInfo>();
         for (int i = 0; i < combatState.Enemies.Count; i++)
@@ -75,6 +78,13 @@ public static class CombatHandler
                 MaxHp = player.Creature.MaxHp,
                 Block = player.Creature.Block,
                 Powers = BuildPowerList(player.Creature)
+            },
+            Osty = new OstyInfo
+            {
+                Hp = osty != null ? osty.CurrentHp : -1,
+                MaxHp = osty != null ? osty.MaxHp : -1,
+                Block = osty != null ? osty.Block : -1,
+                IsAlive = player.IsOstyAlive
             },
             Enemies = enemies,
             Hand = hand,
