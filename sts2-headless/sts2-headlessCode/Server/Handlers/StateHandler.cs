@@ -301,6 +301,15 @@ public static class StateHandler
         for (int i = 0; i < eventModel.CurrentOptions.Count; i++)
         {
             var option = eventModel.CurrentOptions[i];
+            // The event's dynamic vars (HP costs, amounts, enchantment names)
+            // live on the model and are only merged into the option LocStrings
+            // when NEventOptionButton renders them. get_state can run before
+            // that render, so merge here too or amounts format as blanks
+            // ("Lose  Max HP"). AddTo overwrites, so re-merging is safe.
+            if (option.Title is not null)
+                eventModel.DynamicVars.AddTo(option.Title);
+            if (option.Description is not null)
+                eventModel.DynamicVars.AddTo(option.Description);
             options.Add(new EventOptionInfo
             {
                 Index = i,
@@ -552,12 +561,25 @@ public static class StateHandler
         };
     }
 
+    /// <summary>
+    /// Mirror NEventRoom.SetDescription: merge the event's dynamic vars (and
+    /// IsMultiplayer) into the LocString before formatting. The UI only does
+    /// this at render time, which get_state can beat.
+    /// </summary>
+    private static void AddEventVars(EventModel eventModel, MegaCrit.Sts2.Core.Localization.LocString str)
+    {
+        if (eventModel.Owner is not null)
+            str.Add("IsMultiplayer", eventModel.Owner.RunState.Players.Count > 1);
+        eventModel.DynamicVars.AddTo(str);
+    }
+
     private static string GetEventBody(EventModel eventModel)
     {
         // Try the current description first (set after event begins)
         var desc = eventModel.Description;
         if (desc is not null)
         {
+            AddEventVars(eventModel, desc);
             var text = desc.GetFormattedText();
             // If GetFormattedText returned the raw key (loc miss), treat as empty
             if (!text.Contains('.') || text.Contains(' '))
@@ -568,6 +590,7 @@ public static class StateHandler
         var initial = eventModel.InitialDescription;
         if (initial is not null)
         {
+            AddEventVars(eventModel, initial);
             var text = initial.GetFormattedText();
             if (!text.Contains('.') || text.Contains(' '))
                 return CombatHandler.CleanDescription(text);
