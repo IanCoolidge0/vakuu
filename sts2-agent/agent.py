@@ -859,6 +859,8 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                         reward_index = self._resolve_reward_index(reward_type)
                         if reward_index is None:
                             return json.dumps({"error": f"No '{reward_type}' reward available."})
+                        if reward_type == "potion" and all(pot["name"] is not None for pot in state["potions"]):
+                            return json.dumps({"error": f"All potion slots are full. Discard or drink a potion to pick this one up."})
                     if reward_index is None:
                         reward_index = 0
                     result = self.client.claim_reward(reward_index)
