@@ -164,6 +164,8 @@ public record CombatStateResponse
     [JsonPropertyName("stars")] public int Stars { get; init; }
     [JsonPropertyName("player")] public CombatPlayerInfo Player { get; init; } = new();
     [JsonPropertyName("osty")] public OstyInfo Osty { get; init; } = new();
+    [JsonPropertyName("orb_slots")] public int OrbSlots { get; init; }
+    [JsonPropertyName("orbs")] public List<OrbInfo> Orbs { get; init; } = [];
     [JsonPropertyName("enemies")] public List<EnemyInfo> Enemies { get; init; } = [];
     [JsonPropertyName("hand")] public List<CardInfo> Hand { get; init; } = [];
     [JsonPropertyName("potions")] public List<PotionSlotInfo> Potions { get; init; } = [];
@@ -188,6 +190,13 @@ public record OstyInfo
     [JsonPropertyName("max_hp")] public int MaxHp { get; init; }
     [JsonPropertyName("block")] public int Block { get; init; }
     [JsonPropertyName("is_alive")] public bool IsAlive { get; init; }
+}
+
+public record OrbInfo
+{
+    [JsonPropertyName("type")] public string Type { get; init; }
+    [JsonPropertyName("param1")] public decimal Param1 { get; init; } // Passive value
+    [JsonPropertyName("param2")] public decimal Param2 { get; init; } // Active/evoke value
 }
 
 public record EnemyInfo

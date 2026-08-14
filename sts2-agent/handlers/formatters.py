@@ -99,6 +99,25 @@ def ench_definitions_section(cards) -> str:
         return ""
     return "ENCHANTMENTS:\n" + "\n".join(f"  {k}: {v}" for k, v in seen.items())
 
+def format_orb_slots(orbs, total_slots) -> str:
+    """Formatter for orb slots. Adds empty slots if the number of orb slots
+    exceeds the number of provided orbs."""
+    empty_slots = total_slots - len(orbs)
+    line = " ".join(["()" for _ in range(empty_slots)])
+    for orb in orbs[::-1]:
+        if orb["type"] == "lightning":
+            line += f" (L {orb["param1"]}/{orb["param2"]})"
+        elif orb["type"] == "frost":
+            line += f" (F {orb["param1"]}/{orb["param2"]})"
+        elif orb["type"] == "dark":
+            line += f" (D {orb["param1"]}/{orb["param2"]})"
+        elif orb["type"] == "glass":
+            line += f" (G {orb["param1"]}/{orb["param2"]})"
+        elif orb["type"] == "plasma":
+            line += f" (P)"
+        else:
+            print(f"{RED}Format error: unknown orb type {orb["type"]}{RESET}")
+    return f"Orbs: {line}"
 
 def format_combat(state: dict, combat: dict) -> str:
     lines = []
@@ -140,6 +159,10 @@ def format_combat(state: dict, combat: dict) -> str:
             lines.append(f"Osty: {osty['hp'] / osty['max_hp']} | Block: {osty['block']}")
         else:
             lines.append(f"Osty is dead.")
+
+    # Orbs (Defect): shown whenever the number of Orb slots exceeds zero.
+    if combat['orb_slots'] > 0:
+        lines.append(format_orb_slots(combat['orbs'], combat['orb_slots']))
 
     lines.append("")
     lines.append("ENEMIES:")

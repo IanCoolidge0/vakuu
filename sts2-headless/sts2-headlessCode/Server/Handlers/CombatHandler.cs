@@ -13,6 +13,7 @@ using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Models.Monsters;
 using sts2_headless.sts2_headlessCode.Models;
+using MegaCrit.Sts2.Core.Models.Orbs;
 
 namespace sts2_headless.sts2_headlessCode.Server.Handlers;
 
@@ -45,6 +46,47 @@ public static class CombatHandler
         {
             var enemy = combatState.Enemies[i];
             enemies.Add(BuildEnemyInfo(i, enemy, combatState));
+        }
+
+        var orbQueue = playerCombat.OrbQueue;
+        var playerOrbs = new List<OrbInfo>();
+        foreach (var orb in orbQueue.Orbs) {
+            if (orb is LightningOrb _lo) {
+                playerOrbs.Add(new OrbInfo
+                {
+                    Type = "lightning",
+                    Param1 = _lo.PassiveVal,
+                    Param2 = _lo.EvokeVal
+                });
+            } else if (orb is FrostOrb _fo) {
+                playerOrbs.Add(new OrbInfo
+                {
+                    Type = "frost",
+                    Param1 = _fo.PassiveVal,
+                    Param2 = _fo.EvokeVal
+                });
+            } else if (orb is DarkOrb _do) {
+                playerOrbs.Add(new OrbInfo
+                {
+                    Type = "dark",
+                    Param1 = _do.PassiveVal,
+                    Param2 = _do.EvokeVal
+                });
+            } else if (orb is GlassOrb _go) {
+                playerOrbs.Add(new OrbInfo
+                {
+                    Type = "glass",
+                    Param1 = _go.PassiveVal,
+                    Param2 = _go.EvokeVal
+                });
+            } else if (orb is PlasmaOrb _po) {
+                playerOrbs.Add(new OrbInfo
+                {
+                    Type = "plasma",
+                    Param1 = 1,
+                    Param2 = 2
+                });
+            }
         }
 
         var hand = new List<CardInfo>();
@@ -86,6 +128,8 @@ public static class CombatHandler
                 Block = osty != null ? osty.Block : -1,
                 IsAlive = player.IsOstyAlive
             },
+            OrbSlots = orbQueue.Capacity,
+            Orbs = playerOrbs,
             Enemies = enemies,
             Hand = hand,
             Potions = potions,
