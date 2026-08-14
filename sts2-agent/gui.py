@@ -516,6 +516,7 @@ class App:
                             self._insert_think(data)
                         else:
                             self._insert_spans(data)
+
                 elif kind == "exit":
                     self._insert_sys(f"— agent exited (code {payload}) —")
                     self.run_label.config(

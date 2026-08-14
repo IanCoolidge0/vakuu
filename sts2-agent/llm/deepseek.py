@@ -39,8 +39,8 @@ class DeepSeekProvider(LLMProvider):
         # prompt caching, so we don't attach cache_control markers here.
         kwargs = {
             "model": self.model,
-            "effort": self.effort,
-            "max_tokens": 1024,
+            "output_config": { "effort": self.effort },
+            "max_tokens": 4096,
             "system": self.system_prompt,
             "messages": self.messages,
         }
