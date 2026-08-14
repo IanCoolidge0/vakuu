@@ -34,11 +34,11 @@
       "Channel": "Channeling an Orb puts it into the leftmost empty Orb slot.",
       "Evoke": "Evoking an Orb consumes it for a stronger burst effect.",
       "Focus": "Focus X increases the effectiveness of your Orbs by X.",
-      "Lightning Orb": "Passive: 3 damage to a random enemy. Evoke: 8 damage to a random enemy.",
-      "Frost Orb": "Passive: gain 2 Block. Evoke: gain 5 Block.",
-      "Dark Orb": "Passive: stores +6 damage. Evoke: deals stored damage to the lowest-HP enemy.",
-      "Plasma Orb": "Passive: +1 Energy next turn. Evoke: gain 2 Energy.",
-      "Glass Orb": "Passive: 4 damage to ALL enemies, decreasing by 1 per turn. Evoke: double its passive damage."
+      "Lightning Orb": "Passive: 3 damage to a random enemy. Evoke: 8 damage to a random enemy. Appears as (L {passive damage}/{evoke damage}).",
+      "Frost Orb": "Passive: gain 2 Block. Evoke: gain 5 Block. Appears as (F {passive block}/{evoke block}).",
+      "Dark Orb": "Passive: stores +6 damage. Evoke: deals stored damage to the lowest-HP enemy. Appears as (L {passive gain}/{evoke damage}).",
+      "Plasma Orb": "Passive: +1 Energy next turn. Evoke: gain 2 Energy. Appears as (P).",
+      "Glass Orb": "Passive: 4 damage to ALL enemies, decreasing by 1 per turn. Evoke: double its passive damage. Appears as (G {passive damage}/{evoke damage})."
     }
   }
 }
