@@ -66,8 +66,11 @@ class GameClient:
     def choose_map_node(self, col: int, row: int) -> dict:
         return self._post("/game/action", {"type": "choose_map_node", "col": col, "row": row})
 
-    def choose_event_option(self, index: int) -> dict:
-        return self._post("/game/action", {"type": "choose_event_option", "card_index": index})
+    def choose_event_option(self, index: int, confirm: bool = False) -> dict:
+        data = {"type": "choose_event_option", "card_index": index}
+        if confirm:
+            data["confirm"] = True
+        return self._post("/game/action", data)
 
     def claim_reward(self, index: int) -> dict:
         return self._post("/game/action", {"type": "claim_reward", "card_index": index})

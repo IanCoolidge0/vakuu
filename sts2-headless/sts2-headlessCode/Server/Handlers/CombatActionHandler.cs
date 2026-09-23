@@ -9,7 +9,10 @@ using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using sts2_headless.sts2_headlessCode.Server;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using sts2_headless.sts2_headlessCode.Models;
@@ -49,6 +52,9 @@ public static class CombatActionHandler
         Player? player = state.Players.FirstOrDefault();
         if (player is null)
             return Error("No player found.");
+
+        if (request.Type == "use_potion" && !CombatManager.Instance.IsInProgress)
+            return await ThrowFoulPotion(request, state, player);
 
         var combatState = player.Creature.CombatState;
         var playerCombat = player.PlayerCombatState;
@@ -344,6 +350,53 @@ public static class CombatActionHandler
         potion.EnqueueManualUse(target);
 
         return Success($"Used potion {potion.Id}");
+    }
+
+    /// <summary>
+    /// Outside combat the one usable potion is the Foul Potion, thrown at a
+    /// merchant: 100 gold in a shop, or at the Fake Merchant a fight for his
+    /// relics. The game targets the merchant himself rather than a creature,
+    /// so there is nothing for the caller to target.
+    /// </summary>
+    private static async Task<string> ThrowFoulPotion(CombatActionRequest request, RunState state, Player player)
+    {
+        if (StateHandler.CurrentScreen() != "shop")
+            return Error("Not in combat. Outside combat the only usable potion is a Foul Potion, thrown at the merchant in a shop.");
+
+        if (request.PotionIndex is null)
+            return Error("use_potion requires potion_index.");
+        int potionIndex = request.PotionIndex.Value;
+        var potionSlots = player.PotionSlots;
+        if (potionIndex < 0 || potionIndex >= potionSlots.Count)
+            return Error($"potion_index {potionIndex} out of range ({potionSlots.Count} slots).");
+        var potion = potionSlots[potionIndex];
+        if (potion is null)
+            return Error($"Potion slot {potionIndex} is empty.");
+
+        string name = potion.Title?.GetFormattedText() ?? potion.Id.ToString();
+        if (potion is not FoulPotion)
+            return Error($"{name} can't be used outside combat. Only a Foul Potion can: it's thrown at the merchant.");
+        // Same gates as the potion's use button: the merchant must be
+        // targetable (not while his inventory is open).
+        if (!player.CanRemovePotions || !potion.PassesCustomUsabilityCheck)
+            return Error("The Foul Potion can't be thrown at the merchant right now.");
+
+        int goldBefore = player.Gold;
+        bool fakeMerchant = state.CurrentRoom is EventRoom { LocalMutableEvent: FakeMerchant };
+        potion.EnqueueManualUse(null);
+
+        if (fakeMerchant)
+        {
+            // He answers with a line, then a fight for his relics starts.
+            bool fighting = await ActionHandler.WaitUntil(
+                () => CombatManager.Instance.IsInProgress && IsPlayPhase(), 20000);
+            return Success(fighting
+                ? "Threw the Foul Potion at the merchant. He attacks: combat has started."
+                : "Threw the Foul Potion at the merchant (no fight observed yet; re-read the state).");
+        }
+
+        await ActionHandler.WaitUntil(() => player.Gold != goldBefore, 5000);
+        return Success($"Threw the Foul Potion at the merchant: gained {player.Gold - goldBefore} gold.");
     }
 
     internal static string RunOverMessage(RunState state)

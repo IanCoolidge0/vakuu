@@ -883,7 +883,8 @@ Final deck:
 
                 # Events
                 case "choose_event_option":
-                    result = self.client.choose_event_option(inp["option_index"])
+                    result = self.client.choose_event_option(
+                        inp["option_index"], bool(inp.get("confirm")))
 
                 # Card rewards
                 case "choose_card_reward":

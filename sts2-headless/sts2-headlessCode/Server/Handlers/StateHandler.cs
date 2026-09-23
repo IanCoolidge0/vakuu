@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Godot;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
@@ -196,6 +197,13 @@ public static class StateHandler
             return "rewards";
         }
 
+        // The Fake Merchant event has no options at all: it's a shop run from
+        // a custom node, left through its own proceed button, and the event
+        // never finishes. Report its shop while it's up and the map after —
+        // the option-based detection below would call both "waiting".
+        if (state.CurrentRoom is EventRoom { LocalMutableEvent: FakeMerchant })
+            return NMapScreen.Instance?.IsOpen == true ? MapScreenOrWaiting(state) : "shop";
+
         // If CurrentRoom is still an EventRoom and the event still needs
         // interaction (unfinished or pre-finished), show the event screen —
         // even if the map is visually open — so the agent uses the event
@@ -361,7 +369,8 @@ public static class StateHandler
                 Label = CombatHandler.CleanDescription(option.Title?.GetFormattedText() ?? ""),
                 Description = CombatHandler.CleanDescription(option.Description?.GetFormattedText() ?? ""),
                 IsLocked = option.IsLocked,
-                IsProceed = option.IsProceed
+                IsProceed = option.IsProceed,
+                WillKill = ActionHandler.IsLethal(option)
             });
         }
 
@@ -543,12 +552,26 @@ public static class StateHandler
         };
     }
 
+    /// <summary>
+    /// The shop inventory on screen: a merchant room's, or the Fake Merchant
+    /// event's (six fake relics, same inventory model).
+    /// </summary>
+    internal static MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory? CurrentMerchantInventory(
+        MegaCrit.Sts2.Core.Runs.RunState state)
+    {
+        return state.CurrentRoom switch
+        {
+            MerchantRoom merchantRoom => merchantRoom.GetLocalInventory(),
+            EventRoom { LocalMutableEvent: FakeMerchant fakeMerchant } => fakeMerchant.Inventory,
+            _ => null
+        };
+    }
+
     private static ShopInfo? BuildShopInfo(MegaCrit.Sts2.Core.Runs.RunState state)
     {
-        if (state.CurrentRoom is not MerchantRoom merchantRoom)
+        var inventory = CurrentMerchantInventory(state);
+        if (inventory is null)
             return null;
-
-        var inventory = merchantRoom.GetLocalInventory();
 
         var cards = new List<ShopCardInfo>();
         foreach (var entry in inventory.CardEntries)

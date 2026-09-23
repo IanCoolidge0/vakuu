@@ -171,6 +171,10 @@ public record EventOptionInfo
     [JsonPropertyName("description")] public string Description { get; init; } = "";
     [JsonPropertyName("is_locked")] public bool IsLocked { get; init; }
     [JsonPropertyName("is_proceed")] public bool IsProceed { get; init; }
+    // The game draws this option with a kill glow: choosing it kills you.
+    [JsonPropertyName("will_kill")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool WillKill { get; init; }
 }
 
 public record CardRewardInfo

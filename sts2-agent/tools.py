@@ -73,6 +73,10 @@ EVENT_TOOLS = [
                 "option_index": {
                     "type": "integer",
                     "description": "Index of the event option (0-based)"
+                },
+                "confirm": {
+                    "type": "boolean",
+                    "description": "Only for an option that abandons the run: the game asks for confirmation, and it is refused without confirm=true."
                 }
             },
             "required": ["option_index"]
@@ -203,6 +207,20 @@ CRYSTAL_SPHERE_TOOLS = [
 ]
 
 SHOP_TOOLS = [
+    {
+        "name": "use_potion",
+        "description": "Use a potion in the shop. Outside combat only a Foul Potion can be used: it's thrown at the merchant (no target needed). Any other potion is refused.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "potion_index": {
+                    "type": "integer",
+                    "description": "Index of the potion slot (0-based)"
+                }
+            },
+            "required": ["potion_index"]
+        }
+    },
     {
         "name": "shop_buy",
         "description": "Buy an item from the shop by its name, exactly as listed in the inventory (e.g. 'Armaments', 'Strength Potion', 'Bash+').",

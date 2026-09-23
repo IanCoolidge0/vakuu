@@ -33,19 +33,19 @@ Each turn:
 **Actions (POST `/game/action/combat`, body is JSON):**
 - `{"type":"play_card","card_index":N}` — play hand card at index N. Add `"target_index":M` for single-target attacks. Indices refer to the hand as it is when the request arrives: every play removes a card and can add others, so the cards after it shift.
 - `{"type":"end_turn"}`
-- `{"type":"use_potion","potion_index":N}` — add `"target_index"` if it targets an enemy
+- `{"type":"use_potion","potion_index":N}` — add `"target_index"` if it targets an enemy. Outside combat it works only on a `shop` screen and only for a Foul Potion, which is thrown at the merchant (no target needed).
 - `{"type":"select_hand_card","card_index":N}` — pick a card during in-combat hand-selection prompts (e.g. Armaments)
 
 **Actions (POST `/game/action`, body is JSON). Most use `card_index` as a generic index field:**
 - `{"type":"choose_map_node","col":C,"row":R}`
-- `{"type":"choose_event_option","card_index":N}` (option index)
+- `{"type":"choose_event_option","card_index":N}` (option index). Options with `"will_kill": true` kill you. An option that abandons the run is refused unless you add `"confirm": true`, matching the game's own confirmation popup.
 - `{"type":"claim_reward","card_index":N}` (reward index — 0 is usually fine; loop to claim each)
 - `{"type":"skip_rewards"}` — leave the rewards screen, forfeiting anything unclaimed (`proceed` refuses while rewards remain)
 - `{"type":"proceed"}` — advance from rewards/event/shop/etc.
 - `{"type":"choose_rest_option","card_index":N}`
 - `{"type":"choose_card_reward","card_index":N}` — pick from card-reward overlay
 - `{"type":"skip_card_reward"}`
-- `{"type":"shop_buy","name":"<item name>"}` — buy a card, relic or potion by its name as listed in the shop (add `+` for an upgraded card, e.g. `"Strike+"`)
+- `{"type":"shop_buy","name":"<item name>"}` — buy a card, relic or potion by its name as listed in the shop (add `+` for an upgraded card, e.g. `"Strike+"`). Some events show up as a `shop` screen too; `proceed` leaves them.
 - `{"type":"shop_remove_card"}` — pay to open card-removal selection
 - `{"type":"select_card","card_index":N}` — pick a card on a card-grid screen (upgrade/transform/remove). Then `{"type":"confirm_selection"}` to confirm.
 - `{"type":"confirm_selection"}` — confirm an action on a selected card after selected via `{"type":"select_card"}`. (upgrade/transform/remove). 

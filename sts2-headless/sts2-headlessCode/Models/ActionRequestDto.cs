@@ -23,4 +23,7 @@ public record CombatActionRequest
     [JsonPropertyName("x")] public int? X { get; init; }
     [JsonPropertyName("y")] public int? Y { get; init; }
     [JsonPropertyName("tool")] public string? Tool { get; init; }
+    // Required to choose an event option that abandons the run (the game's
+    // own confirmation popup).
+    [JsonPropertyName("confirm")] public bool? Confirm { get; init; }
 }

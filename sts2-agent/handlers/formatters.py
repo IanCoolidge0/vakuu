@@ -257,7 +257,9 @@ def format_event(state: dict) -> str:
     lines.append("\nOptions:")
     for o in event['options']:
         locked = " [LOCKED]" if o['is_locked'] else ""
-        lines.append(f"  [{o['index']}] {o['label']}{locked}: {clean_desc(o['description'])}")
+        # The game's kill glow on lethal options
+        lethal = " [KILLS YOU]" if o.get('will_kill') else ""
+        lines.append(f"  [{o['index']}] {o['label']}{locked}{lethal}: {clean_desc(o['description'])}")
     mentions = format_enchantment_mentions(
         event.get('body'), *(o.get('description') for o in event['options']))
     if mentions:
@@ -317,6 +319,10 @@ def format_shop(state: dict) -> str:
     if shop.get('card_removal_cost') is not None:
         affordable = "" if shop['card_removal_cost'] <= state['gold'] else " [CAN'T AFFORD]"
         lines.append(f"\nCard removal: {shop['card_removal_cost']}g{affordable}")
+    # Slot indices for use_potion (a Foul Potion can be thrown at the merchant)
+    held = [p for p in state.get('potions') or [] if p.get('name')]
+    if held:
+        lines.append("\nYour potions: " + ", ".join(f"[{p['index']}] {p['name']}" for p in held))
     return "\n".join(lines)
 
 

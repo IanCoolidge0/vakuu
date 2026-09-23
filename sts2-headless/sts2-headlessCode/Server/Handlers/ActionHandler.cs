@@ -2,6 +2,9 @@ using System.Text.Json;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Nodes.Events.Custom;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes;
@@ -164,13 +167,24 @@ public static class ActionHandler
             return false;
 
         var proceed = FindAll<NEventOptionButton>(eventRoom)
-            .FirstOrDefault(b => b.Option.IsProceed && !b.Option.IsLocked);
+            .FirstOrDefault(b => b.Option.IsProceed && !b.Option.IsLocked && !IsLethal(b.Option));
         if (proceed is null)
             return false;
 
         proceed.ForceClick();
         await WaitUntil(() => FindAll<NMapPoint>(mapScreen).Any(mp => mp.IsTravelable), 5000);
         return true;
+    }
+
+    /// <summary>
+    /// Options the game marks as lethal and draws with a kill glow. Proceed
+    /// and the finished-event cleanup must never pick one: Trial's "Double
+    /// Down" is flagged as a proceed option, and choosing it abandons the run.
+    /// </summary>
+    internal static bool IsLethal(EventOption option)
+    {
+        var owner = NRun.Instance?._state.Players.FirstOrDefault();
+        return owner is not null && option.WillKillPlayer?.Invoke(owner) == true;
     }
 
     private static async Task<string> ChooseEventOption(CombatActionRequest request, NRun run)
@@ -223,8 +237,29 @@ public static class ActionHandler
                   || !optionsBefore.SequenceEqual(eventModel.CurrentOptions)
                   || !ReferenceEquals(NOverlayStack.Instance?.Peek(), overlayBefore)
                   || (!mapWasOpen && NMapScreen.Instance?.IsOpen == true)
-                  || CombatManager.Instance.IsInProgress,
+                  || CombatManager.Instance.IsInProgress
+                  || NModalContainer.Instance?.OpenModal is NAbandonRunConfirmPopup,
             15000);
+
+        // Trial's "Double Down" ends the run through the game's own
+        // abandon-run confirmation popup, which the API can't otherwise see
+        // or answer. Mirror the popup: go through only on an explicit
+        // confirm, otherwise dismiss it and say what the option does.
+        if (NModalContainer.Instance?.OpenModal is NAbandonRunConfirmPopup abandonPopup)
+        {
+            if (request.Confirm != true)
+            {
+                NModalContainer.Instance.Clear();
+                return Error($"Option {optionIndex} abandons the run: it ends immediately as a defeat. " +
+                             "The game asks for confirmation; choose it again with \"confirm\": true to go through with it.");
+            }
+
+            abandonPopup.OnYesButtonPressed(null!);
+            NModalContainer.Instance.Clear();
+            await WaitUntil(() => StateHandler.IsRunOver(state), 15000);
+            return Success($"Selected event option {optionIndex}: the run was abandoned.");
+        }
+
         if (!moved)
             return Success($"Selected event option {optionIndex} (no change observed yet; re-read the state)");
 
@@ -375,12 +410,20 @@ public static class ActionHandler
             }
         }
 
+        // Fake Merchant event: a shop with its own proceed button (to the map)
+        if (run._state.CurrentRoom is EventRoom { LocalMutableEvent: FakeMerchant { Node: NFakeMerchant fakeMerchant } }
+            && fakeMerchant._proceedButton?.IsEnabled == true)
+        {
+            fakeMerchant._proceedButton.ForceClick();
+            return Success("Left the merchant.");
+        }
+
         // Try event proceed
         var eventRoom = root.GetNodeOrNull("/root/Game/RootSceneContainer/Run/RoomContainer/EventRoom");
         if (eventRoom is not null)
         {
             var proceedButtons = FindAll<NEventOptionButton>(eventRoom)
-                .Where(b => b.Option.IsProceed && !b.Option.IsLocked)
+                .Where(b => b.Option.IsProceed && !b.Option.IsLocked && !IsLethal(b.Option))
                 .ToList();
             if (proceedButtons.Count > 0)
             {
@@ -458,9 +501,8 @@ public static class ActionHandler
 
     private static string ShopBuy(CombatActionRequest request, NRun run)
     {
-        var state = run._state;
-
-        if (state.CurrentRoom is not MerchantRoom merchantRoom)
+        var inventory = StateHandler.CurrentMerchantInventory(run._state);
+        if (inventory is null)
             return Error("Not in a shop.");
 
         // Purchase by name: flat slot indices shift when an item is bought
@@ -470,7 +512,6 @@ public static class ActionHandler
         if (string.IsNullOrWhiteSpace(request.Name))
             return Error("shop_buy requires name (the item's name as listed in the shop).");
 
-        var inventory = merchantRoom.GetLocalInventory();
         string wanted = request.Name.Trim();
 
         var stocked = new List<(string Name, MerchantEntry Entry)>();
@@ -507,11 +548,10 @@ public static class ActionHandler
 
     private static string ShopRemoveCard(CombatActionRequest request, NRun run)
     {
-        var state = run._state;
-        if (state.CurrentRoom is not MerchantRoom merchantRoom)
+        var inventory = StateHandler.CurrentMerchantInventory(run._state);
+        if (inventory is null)
             return Error("Not in a shop.");
 
-        var inventory = merchantRoom.GetLocalInventory();
         var removal = inventory.CardRemovalEntry;
         if (removal is null || !removal.IsStocked)
             return Error("Card removal not available.");
@@ -671,7 +711,7 @@ public static class ActionHandler
     // Handlers run on the main thread; awaiting Task.Delay yields back to the
     // game loop, so the game keeps animating while we poll.
 
-    private static async Task<bool> WaitUntil(Func<bool> condition, int timeoutMs)
+    internal static async Task<bool> WaitUntil(Func<bool> condition, int timeoutMs)
     {
         for (int waited = 0; waited < timeoutMs; waited += PollIntervalMs)
         {
