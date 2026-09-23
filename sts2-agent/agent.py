@@ -41,17 +41,19 @@ HAND_DRAW_WAIT = 2.5
 
 class Agent:
     def __init__(self, llm: LLMProvider, client: GameClient, verbose: bool = True,
-                 logger=None, tts=None):
+                 logger=None, tts=None, notes=None):
         self.llm = llm
         self.client = client
         self.verbose = verbose
         self.logger = logger
         self.tts = tts
+        self.notes = notes
         self.paused = False  # set via the stdin control listener (main.py)
         self.last_act = 0
         self.action_count = 0
         self.max_actions = 2000  # safety limit per run
         self._last_screen = None
+        self._last_fingerprint = None
         self._same_screen_count = 0
         self._pending_tool_calls = False
         # Tool results awaiting delivery: set when _take_action exits at a
@@ -105,8 +107,20 @@ class Agent:
                 time.sleep(2)
                 continue
 
+            # Run over. Checked before the HP test: a victory also reads 0 HP
+            # (the Architect's ending kills the player after the win is
+            # recorded), so HP alone can't tell a win from a death.
+            if state.get("screen") == "game_over" and (state.get("game_over") or {}).get("victory"):
+                print(f"\n{BOLD}{YELLOW}")
+                print(f"  ╔═══════════════════════════════════════╗")
+                print(f"  ║           VAKUU IS VICTORIOUS         ║")
+                print(f"  ╚═══════════════════════════════════════╝{RESET}")
+                print(f"  Total actions: {self.action_count}")
+                self._postmortem(state, victory=True)
+                return
+
             # Check for death
-            if state.get("hp", 1) <= 0:
+            if state.get("screen") == "game_over" or state.get("hp", 1) <= 0:
                 print(f"\n{BOLD}{RED}")
                 print(f"  ╔═══════════════════════════════════════╗")
                 print(f"  ║           VAKUU HAS FALLEN            ║")
@@ -167,8 +181,12 @@ class Agent:
                 time.sleep(0.5)
                 continue
 
-            # Detect thrashing — same screen too many times (exempt combat, it's naturally long)
-            if screen == self._last_screen and screen != "combat":
+            # Detect thrashing — same screen, nothing changed, too many times
+            # (exempt combat, it's naturally long). Multi-page events revisit
+            # the event screen once per page, so only unchanged state counts.
+            fingerprint = self._state_fingerprint(state)
+            if (screen == self._last_screen and screen != "combat"
+                    and fingerprint == self._last_fingerprint):
                 self._same_screen_count += 1
                 if self._same_screen_count > 5:
                     print(f"{YELLOW}Stuck on '{screen}' for {self._same_screen_count} iterations, waiting...{RESET}")
@@ -184,6 +202,7 @@ class Agent:
             else:
                 self._same_screen_count = 0
             self._last_screen = screen
+            self._last_fingerprint = fingerprint
 
             # Build the prompt and get tools for this screen
             prompt = self._build_prompt(screen, state)
@@ -218,7 +237,7 @@ class Agent:
         print(f"\n{YELLOW}Action limit reached ({self.max_actions}).{RESET}")
         print(f"Total actions: {self.action_count}")
 
-    def _postmortem(self, final_state: dict):
+    def _postmortem(self, final_state: dict, victory: bool = False):
         """Ask the LLM for a short postmortem analysis of the run."""
         summary = self._build_summary(final_state)
 
@@ -231,12 +250,13 @@ class Agent:
         except Exception:
             deck_str = "(unavailable)"
 
+        outcome = "You won the run." if victory else "You died."
         prompt = f"""{summary}
 
 Final deck:
 {deck_str}
 
-You died. Write a brief postmortem (3-5 sentences) analyzing:
+{outcome} Write a brief postmortem (3-5 sentences) analyzing:
 - What went well this run
 - What went wrong
 - What you would do differently next time"""
@@ -372,8 +392,9 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
             "potions": [p.get("name") for p in state.get("potions") or []],
             "relics": [r.get("name") for r in state.get("relics") or []],
             "rewards": [r.get("type") for r in rewards.get("rewards") or []],
-            "event": [event.get("name"),
-                      [o.get("label") for o in event.get("options") or []]],
+            "event": [event.get("name"), event.get("body"),
+                      [(o.get("label"), o.get("description"))
+                       for o in event.get("options") or []]],
             "card_select": bool(state.get("card_select")),
             "chest": (state.get("treasure") or {}).get("chest_state"),
         }
@@ -643,10 +664,11 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 #    has never seen, or blind-ends it entirely.
                 #  - play_card / use_potion / select_hand_card may change
                 #    screens (kill → rewards, Armaments → hand_select).
-                #  - choose_map_node / choose_rest_option / proceed /
-                #    confirm_selection are fire-and-forget in the mod: success
-                #    returns while the game is still transitioning, so wait
+                #  - choose_map_node / choose_rest_option / choose_event_option /
+                #    proceed / confirm_selection change screens or pages: wait
                 #    for the outcome to become observable before continuing.
+                #    The mod waits for most of these itself now; this is the
+                #    backstop for anything it doesn't cover.
                 if success and name == "end_turn":
                     check = self._settle_state(timeout=8.0)
                     if check is not None:
@@ -673,6 +695,7 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                             result_data["hand"] = hand
                             result = json.dumps(result_data)
                 elif success and name in ("choose_map_node", "choose_rest_option",
+                                          "choose_event_option",
                                           "claim_reward", "proceed", "skip_rewards",
                                           "confirm_selection"):
                     # Claiming a card reward opens the card_reward screen
@@ -681,6 +704,11 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                     settled, observed = self._settle_transition(
                         state, timeout=settle_timeout)
                     if settled is not None:
+                        screen_changed = True
+                    elif observed and name == "choose_event_option":
+                        # Same screen, next page of the event: re-prompt so
+                        # the model reads the new options instead of picking
+                        # blind from the old page.
                         screen_changed = True
                     elif observed:
                         # Same-screen effect landed (heal, claim, event
@@ -908,6 +936,24 @@ You died. Write a brief postmortem (3-5 sentences) analyzing:
                 case "confirm_selection":
                     result = self.client._post("/game/action",
                         {"type": "confirm_selection"})
+
+                # Cross-run memory
+                case "take_note":
+                    note = inp.get("note")
+                    if not note:
+                        return json.dumps({"error": "take_note requires note."})
+                    if self.notes is None:
+                        return json.dumps({"error": "Note-taking is not available in this session."})
+                    note_id = self.notes.add(
+                        note, inp.get("category", "mechanics"),
+                        context={
+                            "character": state.get("character"),
+                            "ascension": state.get("ascension"),
+                            "act": state.get("act"),
+                            "floor": state.get("floor"),
+                            "screen": screen,
+                        })
+                    return json.dumps({"success": True, "note_id": note_id})
 
                 # Utility (read-only)
                 case "view_deck":

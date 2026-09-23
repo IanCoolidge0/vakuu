@@ -22,6 +22,7 @@ from llm.openai import OpenAIProvider
 from llm.deepseek import DeepSeekProvider
 from llm.human import HumanProvider
 from run_logging import SessionLogger
+from notes import NoteStore
 from tts import TTSToggle
 
 # Vakuu sprite: rows are 16-px left halves, mirrored at render time.
@@ -144,6 +145,8 @@ def main():
                         help="Reasoning effort for the LLM. Default 'medium'. Not all models support all effort levels - check with the provider.")
     parser.add_argument("--log-dir", default="logs",
                         help="Directory for session debug logs (default: logs)")
+    parser.add_argument("--memory-dir", default="memory",
+                        help="Directory for cross-run take_note notes (default: memory)")
     parser.add_argument("--tts", action="store_true",
                         help="Narrate agent text via Kokoro TTS (requires kokoro-onnx + sounddevice)")
     parser.add_argument("--tts-voice", default="af_sarah",
@@ -171,12 +174,16 @@ def main():
     # Create session logger
     logger = SessionLogger(log_dir=args.log_dir, model=args.model, provider=args.provider)
 
+    # Cross-run note store (take_note tool)
+    notes = NoteStore(memory_dir=args.memory_dir)
+
     # TTS narration behind a runtime-switchable holder — safe to pass to the
     # agent even when disabled, and the engine loads lazily on first enable.
     tts = TTSToggle(voice=args.tts_voice, enabled=args.tts)
 
     # Create and run agent
-    agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts)
+    agent = Agent(llm=llm, client=client, verbose=args.verbose, logger=logger, tts=tts,
+                  notes=notes)
     if args.provider != "human":
         _start_control_listener(agent, llm, tts, system_prompt)
 

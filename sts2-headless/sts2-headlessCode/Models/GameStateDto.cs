@@ -47,6 +47,15 @@ public record GameStateResponse
     [JsonPropertyName("hand_select")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public HandSelectInfo? HandSelect { get; init; }
+
+    [JsonPropertyName("game_over")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public GameOverInfo? GameOver { get; init; }
+}
+
+public record GameOverInfo
+{
+    [JsonPropertyName("victory")] public bool Victory { get; init; }
 }
 
 public record CardSelectInfo
@@ -275,6 +284,9 @@ public record PowerInfo
     [JsonPropertyName("id")] public string Id { get; init; } = "";
     [JsonPropertyName("name")] public string Name { get; init; } = "";
     [JsonPropertyName("amount")] public int Amount { get; init; }
+    // The power's tooltip text with its amount resolved — without it,
+    // debuffs like Ringing or Hex are just names to the agent.
+    [JsonPropertyName("description")] public string Description { get; init; } = "";
 }
 
 public record RelicInfo

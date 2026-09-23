@@ -43,6 +43,9 @@ public static class CombatActionHandler
             return Error("No active run.");
 
         RunState state = run._state;
+        if (StateHandler.IsRunOver(state))
+            return Error(RunOverMessage(state));
+
         Player? player = state.Players.FirstOrDefault();
         if (player is null)
             return Error("No player found.");
@@ -87,7 +90,7 @@ public static class CombatActionHandler
     /// Play phase is tracked per-player since v0.107 (multiplayer); headless
     /// runs are single-player, so the first player is the local one.
     /// </summary>
-    private static bool IsPlayPhase()
+    internal static bool IsPlayPhase()
     {
         var player = NRun.Instance?._state.Players.FirstOrDefault();
         return player?.PlayerCombatState?.Phase == PlayerTurnPhase.Play;
@@ -191,8 +194,8 @@ public static class CombatActionHandler
 
         CardModel card = hand[cardIndex];
 
-        if (!card.CanPlay(out UnplayableReason reason, out AbstractModel? _))
-            return Error($"Card '{card.Id}' cannot be played: {reason}");
+        if (!card.CanPlay(out UnplayableReason reason, out AbstractModel? preventer))
+            return Error(DescribeUnplayable(card, reason, preventer));
 
         // Resolve target
         Creature? target = null;
@@ -221,6 +224,40 @@ public static class CombatActionHandler
         RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
 
         return Success($"Played {card.Id}");
+    }
+
+    /// <summary>
+    /// Spell out why a card can't be played. The raw flags ("BlockedByHook")
+    /// don't say what is blocking the card; for hook blocks, name the power
+    /// or relic doing it and quote its effect.
+    /// </summary>
+    private static string DescribeUnplayable(CardModel card, UnplayableReason reason, AbstractModel? preventer)
+    {
+        var parts = new List<string>();
+        if (reason.HasFlag(UnplayableReason.HasUnplayableKeyword))
+            parts.Add("it is Unplayable");
+        if (reason.HasFlag(UnplayableReason.EnergyCostTooHigh))
+            parts.Add("not enough energy");
+        if (reason.HasFlag(UnplayableReason.StarCostTooHigh))
+            parts.Add("not enough stars");
+        if (reason.HasFlag(UnplayableReason.NoLivingAllies))
+            parts.Add("no living ally to target");
+        if (reason.HasFlag(UnplayableReason.BlockedByHook))
+        {
+            parts.Add(preventer switch
+            {
+                PowerModel power => $"blocked by {power.Title.GetFormattedText()} ({CombatHandler.PowerDescription(power)})",
+                RelicModel relic => $"blocked by {relic.Title.GetFormattedText()} ({CombatHandler.CleanDescription(relic.DynamicDescription.GetFormattedText())})",
+                CardModel other => $"blocked by {other.TitleLocString.GetFormattedText()}",
+                not null => $"blocked by {preventer.Id}",
+                null => "blocked by an active effect"
+            });
+        }
+        if (reason.HasFlag(UnplayableReason.BlockedByCardLogic))
+            parts.Add("its own play condition isn't met (see its description)");
+
+        string name = card.TitleLocString?.GetFormattedText() ?? card.Id.ToString();
+        return $"'{name}' cannot be played: {string.Join("; ", parts)}.";
     }
 
     private static string SelectHandCard(CombatActionRequest request)
@@ -307,6 +344,13 @@ public static class CombatActionHandler
         potion.EnqueueManualUse(target);
 
         return Success($"Used potion {potion.Id}");
+    }
+
+    internal static string RunOverMessage(RunState state)
+    {
+        return StateHandler.IsVictory(state)
+            ? "The run is over: victory. No further actions are possible."
+            : "The run is over: defeat. No further actions are possible.";
     }
 
     private static string Success(string message)

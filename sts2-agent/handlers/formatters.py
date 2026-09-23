@@ -99,6 +99,25 @@ def ench_definitions_section(cards) -> str:
         return ""
     return "ENCHANTMENTS:\n" + "\n".join(f"  {k}: {v}" for k, v in seen.items())
 
+
+def power_definitions_section(combat) -> str:
+    """What each power in play does, player's and enemies', using the game's
+    tooltip text (amounts resolved). One line per distinct name+text, so
+    identical debuffs on several enemies are listed once. Empty when no
+    power in play has a description."""
+    creatures = [combat['player']] + [e for e in combat['enemies'] if not e['is_dead']]
+    lines = []
+    seen = set()
+    for creature in creatures:
+        for p in creature['powers']:
+            desc = clean_desc(p.get('description', ''))
+            if desc and (p['name'], desc) not in seen:
+                seen.add((p['name'], desc))
+                lines.append(f"  {p['name']}: {desc}")
+    if not lines:
+        return ""
+    return "POWER EFFECTS:\n" + "\n".join(lines)
+
 def format_orb_slots(orbs, total_slots) -> str:
     """Formatter for orb slots. Adds empty slots if the number of orb slots
     exceeds the number of provided orbs."""
@@ -197,6 +216,11 @@ def format_combat(state: dict, combat: dict) -> str:
     for r in combat['relics']:
         counter = f" [{r['counter']}]" if r.get('counter') is not None else ""
         lines.append(f"  {r['name']}{counter}")
+
+    power_defs = power_definitions_section(combat)
+    if power_defs:
+        lines.append("")
+        lines.append(power_defs)
 
     ench_defs = ench_definitions_section(combat['hand'])
     if ench_defs:

@@ -35,6 +35,13 @@ def main():
            "event": {"name": "Aroma of Chaos", "options": []}}
     assert fp(ev1) != fp(ev2), "event option drain not observed"
 
+    # Next page of a dialogue event with the same button label is observed
+    page1 = {"screen": "event", "event": {"name": "The Architect", "body": "Line one.",
+                                          "options": [{"label": "Continue"}]}}
+    page2 = {"screen": "event", "event": {"name": "The Architect", "body": "Line two.",
+                                          "options": [{"label": "Continue"}]}}
+    assert fp(page1) != fp(page2), "event page change not observed"
+
     # Rest heal
     assert fp(dict(BASE, hp=80)) != fp(BASE), "heal not observed"
 

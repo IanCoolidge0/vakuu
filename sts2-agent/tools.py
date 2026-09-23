@@ -240,6 +240,25 @@ UTILITY_TOOLS = [
             "required": []
         }
     },
+    {
+        "name": "take_note",
+        "description": "Record a lasting insight for future runs. Use this when you discover nontrivial strategic, tactical, or game-mechanic information worth remembering — an enemy pattern that punished a line of play, a card or relic interaction that over/under-performed, an event outcome worth knowing in advance. Notes persist across runs. Don't record run-specific state (current HP, this map) or facts already given in the prompt.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "note": {
+                    "type": "string",
+                    "description": "The insight, written to be useful to a future run with no context from this one"
+                },
+                "category": {
+                    "type": "string",
+                    "enum": ["strategy", "tactics", "mechanics"],
+                    "description": "strategy = run/deck-level, tactics = combat-level, mechanics = game-rule discoveries"
+                }
+            },
+            "required": ["note", "category"]
+        }
+    },
 ]
 
 

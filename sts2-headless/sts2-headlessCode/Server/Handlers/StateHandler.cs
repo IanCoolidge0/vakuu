@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Nodes.Events;
+using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using sts2_headless.sts2_headlessCode.Models;
 using sts2_headless.sts2_headlessCode.Server;
 
@@ -32,7 +33,7 @@ public static class StateHandler
         if (player is null)
             return JsonSerializer.Serialize(new { error = "No player found" }, JsonOptions);
 
-        string screen = DetectScreen(state, run);
+        string screen = EffectiveScreen(DetectScreen(state, run), state);
 
         var relics = player.Relics.Select(r => new RelicInfo
         {
@@ -69,7 +70,11 @@ public static class StateHandler
         };
 
         // Attach screen-specific data
-        if (screen == "card_reward")
+        if (screen == "game_over")
+        {
+            response = response with { GameOver = new GameOverInfo { Victory = IsVictory(state) } };
+        }
+        else if (screen == "card_reward")
         {
             response = response with { CardReward = BuildCardRewardInfo(player) };
         }
@@ -79,17 +84,7 @@ public static class StateHandler
         }
         else if (screen is "event" or "ancient")
         {
-            var eventInfo = BuildEventInfo(state);
-            if (eventInfo is null || eventInfo.Options.Count == 0)
-            {
-                // Event is done but room hasn't transitioned — report as map
-                screen = "map";
-                response = response with { Screen = "map" };
-            }
-            else
-            {
-                response = response with { Event = eventInfo };
-            }
+            response = response with { Event = BuildEventInfo(state) };
         }
         else if (screen == "rest")
         {
@@ -115,6 +110,45 @@ public static class StateHandler
         return JsonSerializer.Serialize(response, JsonOptions);
     }
 
+    /// <summary>
+    /// The screen /game/state would report right now. Action handlers poll
+    /// this to wait for their effect to land before returning.
+    /// </summary>
+    internal static string CurrentScreen()
+    {
+        var run = NRun.Instance;
+        if (run is null)
+            return "none";
+        return EffectiveScreen(DetectScreen(run._state, run), run._state);
+    }
+
+    /// <summary>
+    /// The run has ended, in victory or defeat. The game keeps NRun alive
+    /// behind the game-over overlay until the player leaves it, so without
+    /// this check the last room keeps being reported. Victory is the
+    /// Architect's WinRun, which records the win and then kills the player,
+    /// so the player's HP reads 0 either way.
+    /// </summary>
+    internal static bool IsRunOver(MegaCrit.Sts2.Core.Runs.RunState state)
+    {
+        return state.IsGameOver || NOverlayStack.Instance?.Peek() is NGameOverScreen;
+    }
+
+    // Same test NGameOverScreen uses to pick its victory/defeat presentation.
+    internal static bool IsVictory(MegaCrit.Sts2.Core.Runs.RunState state)
+    {
+        return state.CurrentRoom?.IsVictoryRoom ?? false;
+    }
+
+    private static string EffectiveScreen(string screen, MegaCrit.Sts2.Core.Runs.RunState state)
+    {
+        // Event is done but room hasn't transitioned — report as map
+        if (screen is "event" or "ancient"
+            && !(state.CurrentRoom is EventRoom eventRoom && eventRoom.LocalMutableEvent.CurrentOptions.Count > 0))
+            return "map";
+        return screen;
+    }
+
     private static string DetectScreen(MegaCrit.Sts2.Core.Runs.RunState state, NRun run)
     {
         // Check for pending in-combat card selection (e.g. Armaments, Acrobatics)
@@ -132,6 +166,11 @@ public static class StateHandler
             AgentCardSelector.Cancel();
             AgentCardSelector.CleanupScope();
         }
+
+        // After the selector cleanup above: a death ends combat, and the
+        // selector must not survive into the next run.
+        if (IsRunOver(state))
+            return "game_over";
 
         // Check overlay stack first — card reward selection is shown as an overlay
         var overlay = NOverlayStack.Instance?.Peek();
@@ -200,11 +239,11 @@ public static class StateHandler
     /// Returns "map" when the agent can actually click a node, otherwise
     /// "waiting" so the loop polls instead of guessing.
     ///
-    /// At act transitions (e.g. after defeating the Act 1 boss, before the
-    /// Act 2 ancient auto-spawns) the map screen is briefly visible but
-    /// `CurrentMapCoord` is null and no nodes are clickable. Returning "map"
-    /// in that window makes the agent waste turns on phantom coordinates
-    /// until the next room loads.
+    /// At act transitions (e.g. after defeating the Act 1 boss) the map
+    /// screen is visible but `CurrentMapCoord` is null. The only clickable
+    /// node is the act's ancient, and ActStartTravel clicks it on its own —
+    /// returning "map" in that window makes the agent race it (or waste
+    /// turns on phantom coordinates) until the ancient's room loads.
     /// </summary>
     private static string MapScreenOrWaiting(MegaCrit.Sts2.Core.Runs.RunState state)
     {

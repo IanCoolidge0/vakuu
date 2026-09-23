@@ -27,6 +27,7 @@ public partial class MainFile : Node
     public override void _Process(double delta)
     {
         RequestDispatcher.Instance.ProcessPendingRequests();
+        ActStartTravel.Tick(delta);
     }
 
     public override void _ExitTree()

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Enchantments;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
@@ -305,10 +306,25 @@ public static class CombatHandler
             {
                 Id = power.Id.ToString(),
                 Name = power.Title?.GetFormattedText() ?? power.Id.ToString(),
-                Amount = power.DisplayAmount
+                Amount = power.DisplayAmount,
+                Description = PowerDescription(power)
             });
         }
         return powers;
+    }
+
+    /// <summary>
+    /// The power's own tooltip text, as the hover tip renders it: the smart
+    /// description with Amount, owner, applier and dynamic vars merged in.
+    /// HoverTips is empty for invisible powers, so fall back to the plain
+    /// description with the amount filled in.
+    /// </summary>
+    internal static string PowerDescription(PowerModel power)
+    {
+        string text = power.HoverTips.FirstOrDefault() is HoverTip tip
+            ? tip.Description
+            : power.GetDumbHoverTip().Description;
+        return CleanDescription(text ?? "");
     }
 
     internal static string CleanDescription(string text)
