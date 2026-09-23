@@ -51,6 +51,32 @@ public record GameStateResponse
     [JsonPropertyName("game_over")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public GameOverInfo? GameOver { get; init; }
+
+    [JsonPropertyName("crystal_sphere")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CrystalSphereInfo? CrystalSphere { get; init; }
+}
+
+/// <summary>
+/// The Crystal Sphere (Divination) minigame board, cell by cell: only what
+/// the player can see through the fog. Items' footprints are not included;
+/// the agent works them out from the uncovered cells and the fixed sizes.
+/// </summary>
+public record CrystalSphereInfo
+{
+    [JsonPropertyName("width")] public int Width { get; init; }
+    [JsonPropertyName("height")] public int Height { get; init; }
+    [JsonPropertyName("divinations_left")] public int DivinationsLeft { get; init; }
+    // True once divinations are spent and the rewards are resolved: proceed.
+    [JsonPropertyName("can_proceed")] public bool CanProceed { get; init; }
+    // One string per row, y = 0 first; character x is cell (x, y).
+    // '#' hidden, '.' uncovered and empty, otherwise the label of the item
+    // in that cell. Each item has its own letter (A, B, ...), assigned as
+    // items first come into view and stable for the rest of the board.
+    [JsonPropertyName("grid")] public List<string> Grid { get; init; } = [];
+    // Label -> item type (relic, potion, card reward, gold, curse) for every
+    // item with an uncovered cell.
+    [JsonPropertyName("items")] public Dictionary<string, string> Items { get; init; } = [];
 }
 
 public record GameOverInfo

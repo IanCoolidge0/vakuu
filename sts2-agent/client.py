@@ -99,6 +99,10 @@ class GameClient:
     def pick_relic(self, index: int = 0) -> dict:
         return self._post("/game/action", {"type": "pick_relic", "card_index": index})
 
+    def crystal_sphere_divine(self, tool: str, x: int, y: int) -> dict:
+        return self._post("/game/action",
+                          {"type": "crystal_sphere_divine", "tool": tool, "x": x, "y": y})
+
     # --- Polling helpers ---
 
     def wait_for_screen(self, *expected_screens: str, max_retries: int = 10,

@@ -20,7 +20,7 @@ from handlers.formatters import (
     format_combat, format_state, format_event, format_card_reward,
     format_rewards, format_rest, format_shop, format_map, format_treasure,
     format_card_select, format_hand_select, fmt_cost, fmt_card_cost, clean_desc,
-    card_tags, card_display_name, ench_definitions_section,
+    card_tags, card_display_name, ench_definitions_section, format_crystal_sphere,
 )
 
 # ANSI color codes
@@ -153,7 +153,10 @@ class Agent:
                 ("rest", "card_select"),
                 ("shop", "card_select"),
                 ("event", "card_select"),
-                ("ancient", "card_select")
+                ("ancient", "card_select"),
+                ("event", "crystal_sphere"),
+                ("crystal_sphere", "rewards"),
+                ("crystal_sphere", "card_reward")
             }
             is_related = (self._last_screen, screen) in related_screens or (screen, self._last_screen) in related_screens
             if screen != self._last_screen and not is_related and not self._pending_tool_calls:
@@ -396,6 +399,8 @@ Final deck:
                       [(o.get("label"), o.get("description"))
                        for o in event.get("options") or []]],
             "card_select": bool(state.get("card_select")),
+            "crystal_sphere": [(state.get("crystal_sphere") or {}).get(k)
+                               for k in ("grid", "divinations_left", "can_proceed")],
             "chest": (state.get("treasure") or {}).get("chest_state"),
         }
         return json.dumps(keep, sort_keys=True, default=str)
@@ -496,6 +501,8 @@ Final deck:
                 return format_treasure(state)
             case "card_select":
                 return format_card_select(state)
+            case "crystal_sphere":
+                return format_crystal_sphere(state)
             case "map":
                 try:
                     map_data = self.client.get_map()
@@ -669,7 +676,13 @@ Final deck:
                 #    for the outcome to become observable before continuing.
                 #    The mod waits for most of these itself now; this is the
                 #    backstop for anything it doesn't cover.
-                if success and name == "end_turn":
+                if success and name == "crystal_sphere_divine":
+                    # The mod returns once the uncovering (and, after the
+                    # last divination, the reward hand-out) has played out.
+                    # Re-prompt so the model reads the new board, or the
+                    # rewards screen, rather than divining from the old one.
+                    screen_changed = True
+                elif success and name == "end_turn":
                     check = self._settle_state(timeout=8.0)
                     if check is not None:
                         screen_changed = True
@@ -928,6 +941,11 @@ Final deck:
                     result = self.client.open_chest()
                 case "pick_relic":
                     result = self.client.pick_relic(inp.get("index", 0))
+
+                # Crystal Sphere (Divination) minigame
+                case "crystal_sphere_divine":
+                    result = self.client.crystal_sphere_divine(
+                        inp["tool"], inp["x"], inp["y"])
 
                 # Card selection (upgrade, transform, remove)
                 case "select_card":

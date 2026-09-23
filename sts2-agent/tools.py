@@ -176,6 +176,32 @@ REST_TOOLS = [
     },
 ]
 
+CRYSTAL_SPHERE_TOOLS = [
+    {
+        "name": "crystal_sphere_divine",
+        "description": "Spend one divination on the Crystal Sphere grid: uncover the 3x3 area centred on (x, y) with the big tool, or the single cell (x, y) with the small tool. Refused if it would uncover nothing. When no divinations are left and any rewards are claimed, proceed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tool": {
+                    "type": "string",
+                    "enum": ["big", "small"],
+                    "description": "big = 3x3 area centred on the cell, small = the cell only"
+                },
+                "x": {
+                    "type": "integer",
+                    "description": "Column, 0 = left"
+                },
+                "y": {
+                    "type": "integer",
+                    "description": "Row, 0 = top"
+                }
+            },
+            "required": ["tool", "x", "y"]
+        }
+    },
+]
+
 SHOP_TOOLS = [
     {
         "name": "shop_buy",
@@ -331,5 +357,7 @@ def get_tools_for_screen(screen: str) -> list[dict]:
             tools.extend(HAND_SELECT_TOOLS)
         case "card_select":
             tools.extend(CARD_SELECT_TOOLS)
+        case "crystal_sphere":
+            tools.extend(CRYSTAL_SPHERE_TOOLS)
 
     return tools

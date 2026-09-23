@@ -19,4 +19,8 @@ public record CombatActionRequest
     [JsonPropertyName("select_index")] public int? SelectIndex { get; init; }
     [JsonPropertyName("col")] public int? Col { get; init; }
     [JsonPropertyName("row")] public int? Row { get; init; }
+    // Crystal Sphere (Divination) grid cell and tool ("big" 3x3 / "small" 1x1)
+    [JsonPropertyName("x")] public int? X { get; init; }
+    [JsonPropertyName("y")] public int? Y { get; init; }
+    [JsonPropertyName("tool")] public string? Tool { get; init; }
 }

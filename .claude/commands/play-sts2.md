@@ -15,7 +15,7 @@ Use the Bash tool to issue `curl` commands. No other tools are needed (don't rea
 ## How to play
 
 Each turn:
-1. `curl http://localhost:58232/game/state` — returns JSON describing the current screen (combat, map, event, shop, rest, treasure, card_reward, rewards, card_select, hand_select, ancient, game_over).
+1. `curl http://localhost:58232/game/state` — returns JSON describing the current screen (combat, map, event, shop, rest, treasure, card_reward, rewards, card_select, hand_select, ancient, crystal_sphere, game_over).
 2. Decide what to do based on the screen + state.
 3. POST an action.
 4. Repeat.
@@ -50,6 +50,7 @@ Each turn:
 - `{"type":"select_card","card_index":N}` — pick a card on a card-grid screen (upgrade/transform/remove). Then `{"type":"confirm_selection"}` to confirm.
 - `{"type":"confirm_selection"}` — confirm an action on a selected card after selected via `{"type":"select_card"}`. (upgrade/transform/remove). 
 - `{"type":"open_chest"}`, `{"type":"pick_relic","card_index":N}`
+- `{"type":"crystal_sphere_divine","tool":"big"|"small","x":X,"y":Y}` — the Crystal Sphere event's Divination minigame (`crystal_sphere` screen). Spends one divination: `big` uncovers the 3×3 area centred on cell (x, y), `small` just that cell. The state's `crystal_sphere.grid` is one string per row (y = 0 first, character x = column): `#` hidden, `.` uncovered and empty, otherwise the letter of the item in that cell. Each item has its own letter (`A`, `B`, …), assigned as items come into view. `crystal_sphere.items` maps each letter to the item's type (relic, card reward, potion, gold, curse). An item is won only once all of its cells are uncovered. Every board holds a 4×4 relic, three 2×2 card rewards (common/uncommon/rare), two 1×3 common potions, a 2×2 rare potion, two 2×1 big golds (30), five 1×1 small golds (10), and a 2×2 curse (adds Doubt to your deck). Sizes are width×height. After the last divination, claim the rewards, then `proceed`.
 
 The server settles transitions automatically — after a successful action, the next `/game/state` will reflect the post-animation state (hand fully drawn, map travel finished, the event's next options shown, etc).
 

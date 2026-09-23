@@ -404,3 +404,56 @@ def format_treasure(state: dict) -> str:
             lines.append(f"\nYou took: {r['name']} — {clean_desc(r.get('description', ''))}")
         lines.append("\nProceed to leave the treasure room.")
     return "\n".join(lines)
+
+
+# Fixed contents of every Crystal Sphere board (game rules, not this board):
+# (count, type, variant, w x h). Sizes are width x height in cells.
+_CRYSTAL_SPHERE_CONTENTS = [
+    (1, "relic", None, "4x4"),
+    (1, "card reward", "common", "2x2"),
+    (1, "card reward", "uncommon", "2x2"),
+    (1, "card reward", "rare", "2x2"),
+    (2, "potion", "common", "1x3"),
+    (1, "potion", "rare", "2x2"),
+    (2, "gold", "big, 30", "2x1"),
+    (5, "gold", "small, 10", "1x1"),
+    (1, "curse", "adds Doubt to your deck", "2x2"),
+]
+
+
+def format_crystal_sphere(state: dict) -> str:
+    """The Divination minigame board: the fog grid with coordinates and the
+    fixed board contents. Cells only, as the player sees them: which item
+    footprint a partly uncovered item has is for the model to work out."""
+    lines = [format_state(state)]
+    cs = state.get('crystal_sphere') or {}
+    grid = cs.get('grid') or []
+    width = cs.get('width') or (len(grid[0]) if grid else 0)
+
+    lines.append("")
+    lines.append("CRYSTAL SPHERE (Divination)")
+    lines.append("Items are hidden under the fog. An item is won once every cell it covers "
+                 "is uncovered; partly uncovered items give nothing. Each divination uncovers "
+                 "the 3x3 area centred on a cell (big tool) or a single cell (small tool).")
+    lines.append("Every board holds: " + ", ".join(
+        f"{n} {t}" + (f" ({v})" if v else "") + f" {size}"
+        for n, t, v, size in _CRYSTAL_SPHERE_CONTENTS) + " (sizes are width x height).")
+    lines.append("")
+    lines.append(f"Divinations left: {cs.get('divinations_left', '?')}")
+    lines.append("Legend: # hidden, . uncovered empty, a letter = part of an item "
+                 "(each item has its own letter). Cell (x, y): x = column, y = row.")
+    lines.append("   x" + "".join(f"{x:>3}" for x in range(width)))
+    for y, row in enumerate(grid):
+        lines.append(f"y{y:>3}" + "".join(f"{ch:>3}" for ch in row))
+    items = cs.get('items') or {}
+    if items:
+        lines.append("Items showing: " + ", ".join(f"{label} {kind}" for label, kind in items.items()))
+
+    lines.append("")
+    if cs.get('can_proceed'):
+        lines.append("The divination is over. Proceed to leave.")
+    elif not cs.get('divinations_left'):
+        lines.append("No divinations left; rewards are being handed out.")
+    else:
+        lines.append("Use crystal_sphere_divine to spend a divination.")
+    return "\n".join(lines)

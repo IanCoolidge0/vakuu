@@ -74,6 +74,10 @@ public static class StateHandler
         {
             response = response with { GameOver = new GameOverInfo { Victory = IsVictory(state) } };
         }
+        else if (screen == "crystal_sphere" && CrystalSphereHandler.ActiveScreen() is { } sphere)
+        {
+            response = response with { CrystalSphere = CrystalSphereHandler.BuildInfo(sphere) };
+        }
         else if (screen == "card_reward")
         {
             response = response with { CardReward = BuildCardRewardInfo(player) };
@@ -173,6 +177,8 @@ public static class StateHandler
             return "game_over";
 
         // Check overlay stack first — card reward selection is shown as an overlay
+        if (CrystalSphereHandler.ActiveScreen() is not null)
+            return "crystal_sphere";
         var overlay = NOverlayStack.Instance?.Peek();
         if (overlay is NCardRewardSelectionScreen)
             return "card_reward";

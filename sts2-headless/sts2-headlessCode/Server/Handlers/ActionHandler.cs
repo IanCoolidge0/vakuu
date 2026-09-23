@@ -71,6 +71,7 @@ public static class ActionHandler
             "confirm_selection" => await ConfirmSelection(),
             "open_chest" => await Settled(run, OpenChest),
             "pick_relic" => await Settled(run, () => PickRelic(request)),
+            "crystal_sphere_divine" => await CrystalSphereHandler.Divine(request),
             _ => Error($"Unknown action type: {request.Type}")
         };
     }
@@ -285,6 +286,14 @@ public static class ActionHandler
 
     private static async Task<string> Proceed(NRun run)
     {
+        if (CrystalSphereHandler.ActiveScreen() is { } sphere)
+        {
+            string sphereResult = await CrystalSphereHandler.Proceed(sphere);
+            if (IsSuccess(sphereResult))
+                await WaitForScreenReady(10000);
+            return sphereResult;
+        }
+
         string screenBefore = StateHandler.CurrentScreen();
         string result = ClickProceed(run);
         if (!IsSuccess(result))
