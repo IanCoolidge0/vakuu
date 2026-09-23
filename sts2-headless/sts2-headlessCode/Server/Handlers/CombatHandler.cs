@@ -96,18 +96,6 @@ public static class CombatHandler
             hand.Add(BuildCardInfo(card));
         }
 
-        var potions = new List<PotionSlotInfo>();
-        for (int i = 0; i < player.PotionSlots.Count; i++)
-        {
-            var potion = player.PotionSlots[i];
-            potions.Add(new PotionSlotInfo
-            {
-                Index = i,
-                Id = potion?.Id.ToString(),
-                Name = potion?.Title?.GetFormattedText()
-            });
-        }
-
         var response = new CombatStateResponse
         {
             Turn = combatState.RoundNumber,
@@ -133,7 +121,7 @@ public static class CombatHandler
             Orbs = playerOrbs,
             Enemies = enemies,
             Hand = hand,
-            Potions = potions,
+            Potions = BuildPotionSlots(player),
             Relics = player.Relics.Select(r => new RelicInfo
             {
                 Id = r.Id.ToString(),
@@ -326,6 +314,18 @@ public static class CombatHandler
             : power.GetDumbHoverTip().Description;
         return CleanDescription(text ?? "");
     }
+
+    internal static string PotionDescription(PotionModel potion) =>
+        CleanDescription(potion.DynamicDescription?.GetFormattedText() ?? "");
+
+    internal static List<PotionSlotInfo> BuildPotionSlots(Player player) =>
+        player.PotionSlots.Select((potion, i) => new PotionSlotInfo
+        {
+            Index = i,
+            Id = potion?.Id.ToString(),
+            Name = potion?.Title?.GetFormattedText(),
+            Description = potion is null ? null : PotionDescription(potion)
+        }).ToList();
 
     internal static string CleanDescription(string text)
     {

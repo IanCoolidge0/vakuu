@@ -130,6 +130,7 @@ public record ShopPotionInfo
 {
     [JsonPropertyName("id")] public string Id { get; init; } = "";
     [JsonPropertyName("name")] public string Name { get; init; } = "";
+    [JsonPropertyName("description")] public string Description { get; init; } = "";
     [JsonPropertyName("price")] public int Price { get; init; }
 }
 
@@ -192,6 +193,9 @@ public record RewardItemInfo
 {
     [JsonPropertyName("type")] public string Type { get; init; } = "";
     [JsonPropertyName("description")] public string Description { get; init; } = "";
+    [JsonPropertyName("effect")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Effect { get; init; }
 }
 
 public record CombatStateResponse
@@ -263,6 +267,7 @@ public record PotionSlotInfo
     [JsonPropertyName("index")] public int Index { get; init; }
     [JsonPropertyName("id")] public string? Id { get; init; }
     [JsonPropertyName("name")] public string? Name { get; init; }
+    [JsonPropertyName("description")] public string? Description { get; init; }
 }
 
 public record PilesResponse

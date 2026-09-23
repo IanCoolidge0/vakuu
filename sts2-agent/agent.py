@@ -21,6 +21,7 @@ from handlers.formatters import (
     format_rewards, format_rest, format_shop, format_map, format_treasure,
     format_card_select, format_hand_select, fmt_cost, fmt_card_cost, clean_desc,
     card_tags, card_display_name, ench_definitions_section, format_crystal_sphere,
+    potion_label,
 )
 
 # ANSI color codes
@@ -160,15 +161,16 @@ class Agent:
             }
             is_related = (self._last_screen, screen) in related_screens or (screen, self._last_screen) in related_screens
             if screen != self._last_screen and not is_related and not self._pending_tool_calls:
+                pass
                 # Stashed results live inside the history being discarded —
                 # drop them with it (no dangling tool_use once cleared).
-                self._pending_results = None
-                self.llm.clear_history()
-                # Seed with strategic summary so the model has context
-                summary = self._build_summary(state)
-                if summary:
-                    self.llm.messages.append({"role": "user", "content": summary})
-                    self.llm.messages.append({"role": "assistant", "content": "Understood. I'll make decisions based on this game state."})
+                # self._pending_results = None
+                # self.llm.clear_history()
+                # # Seed with strategic summary so the model has context
+                # summary = self._build_summary(state)
+                # if summary:
+                #     self.llm.messages.append({"role": "user", "content": summary})
+                #     self.llm.messages.append({"role": "assistant", "content": "Understood. I'll make decisions based on this game state."})
 
             act = state.get("act", 0)
             if act != self.last_act and self.last_act > 0:
@@ -457,7 +459,7 @@ Final deck:
             lines.append("Relics: " + ", ".join(relic_strs))
 
         potions = state.get("potions", [])
-        potion_strs = [p['name'] or '(empty)' for p in potions]
+        potion_strs = [potion_label(p) for p in potions]
         lines.append("Potions: " + ", ".join(potion_strs))
 
         # Include deck

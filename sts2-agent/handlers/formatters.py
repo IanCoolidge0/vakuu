@@ -33,6 +33,14 @@ def clean_desc(text, keep_newlines: bool = False) -> str:
     return text.strip()
 
 
+def potion_label(p: dict) -> str:
+    """A potion slot as 'Name (effect)', or '(empty)'."""
+    if not p.get('name'):
+        return '(empty)'
+    desc = clean_desc(p.get('description'))
+    return f"{p['name']} ({desc})" if desc else p['name']
+
+
 def fmt_cost(cost) -> str:
     """Render a card cost — -1 is an X-cost card (spends all remaining energy)."""
     return "X" if cost == -1 else str(cost)
@@ -209,7 +217,7 @@ def format_combat(state: dict, combat: dict) -> str:
     lines.append("")
     lines.append("POTIONS:")
     for p in combat['potions']:
-        lines.append(f"  [{p['index']}] {p['name'] or '(empty)'}")
+        lines.append(f"  [{p['index']}] {potion_label(p)}")
 
     lines.append("")
     lines.append("RELICS:")
@@ -242,7 +250,7 @@ def format_state(state: dict) -> str:
         for r in state['relics']
     ))
     lines.append("Potions: " + ", ".join(
-        p['name'] or '(empty)' for p in state['potions']
+        potion_label(p) for p in state['potions']
     ))
 
     return "\n".join(lines)
@@ -285,7 +293,8 @@ def format_rewards(state: dict) -> str:
         lines.append(f"\nRewards available ({len(rewards)}):")
         lines.append("Claim each reward, then proceed when done.")
         for i, r in enumerate(rewards):
-            lines.append(f"  [{i}] {r['type']}: {clean_desc(r['description'])}")
+            effect = f" - {clean_desc(r['effect'])}" if r.get('effect') else ""
+            lines.append(f"  [{i}] {r['type']}: {clean_desc(r['description'])}{effect}")
     else:
         lines.append("\nAll rewards claimed. Proceed to continue.")
     return "\n".join(lines)
@@ -315,7 +324,7 @@ def format_shop(state: dict) -> str:
     lines.append("Potions:")
     for p in shop['potions']:
         affordable = "" if p['price'] <= state['gold'] else " [CAN'T AFFORD]"
-        lines.append(f"  {p['name']} - {p['price']}g{affordable}")
+        lines.append(f"  {p['name']} - {p['price']}g{affordable} - {clean_desc(p.get('description'))}")
     if shop.get('card_removal_cost') is not None:
         affordable = "" if shop['card_removal_cost'] <= state['gold'] else " [CAN'T AFFORD]"
         lines.append(f"\nCard removal: {shop['card_removal_cost']}g{affordable}")

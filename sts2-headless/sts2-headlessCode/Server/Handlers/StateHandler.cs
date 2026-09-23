@@ -44,18 +44,6 @@ public static class StateHandler
             Counter = r.ShowCounter ? r.DisplayAmount : null
         }).ToList();
 
-        var potions = new List<PotionSlotInfo>();
-        for (int i = 0; i < player.PotionSlots.Count; i++)
-        {
-            var potion = player.PotionSlots[i];
-            potions.Add(new PotionSlotInfo
-            {
-                Index = i,
-                Id = potion?.Id.ToString(),
-                Name = potion?.Title?.GetFormattedText()
-            });
-        }
-
         var response = new GameStateResponse
         {
             Screen = screen,
@@ -67,7 +55,7 @@ public static class StateHandler
             MaxHp = player.Creature.MaxHp,
             Gold = player.Gold,
             Relics = relics,
-            Potions = potions,
+            Potions = CombatHandler.BuildPotionSlots(player),
         };
 
         // Attach screen-specific data
@@ -335,7 +323,11 @@ public static class StateHandler
             rewards.Add(new RewardItemInfo
             {
                 Type = type,
-                Description = reward.Description?.GetFormattedText() ?? ""
+                Description = reward.Description?.GetFormattedText() ?? "",
+                // A potion reward's description is just the potion's name
+                Effect = reward is PotionReward { Potion: { } potion }
+                    ? CombatHandler.PotionDescription(potion)
+                    : null
             });
         }
 
@@ -612,6 +604,7 @@ public static class StateHandler
             {
                 Id = entry.Model.Id.ToString(),
                 Name = entry.Model.Title?.GetFormattedText() ?? entry.Model.Id.ToString(),
+                Description = CombatHandler.PotionDescription(entry.Model),
                 Price = entry.Cost
             });
         }
